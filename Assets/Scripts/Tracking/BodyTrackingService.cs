@@ -29,6 +29,14 @@ namespace Shinmyeong.Tracking
         [Tooltip("거울 모드: 사용자가 오른쪽으로 움직이면 화면에서도 오른쪽으로")]
         [SerializeField] bool _mirror = true;
 
+        [Header("커서 리치 존 — 손목 카메라 영역 일부를 화면 전체로 매핑 (기준안 · 실환경 튜닝)")]
+        [Tooltip("화면 하단 버튼에 닿으려고 몸을 숙이면 손목 추적을 잃는 문제 대응(2026-08-31 실사용 발견).\n서서 허리~머리 높이 손 움직임만으로 화면 전체에 닿게 한다. 끄면 기존 1:1 매핑")]
+        [SerializeField] bool _handZoneEnabled = true;
+        [Tooltip("리치 존 좌하단 (뷰포트 좌표 · y 위로) — 이 지점이 화면 (0,0)이 된다")]
+        [SerializeField] Vector2 _handZoneMin = new Vector2(0.10f, 0.40f);
+        [Tooltip("리치 존 우상단 — 이 지점이 화면 (1,1)이 된다")]
+        [SerializeField] Vector2 _handZoneMax = new Vector2(0.90f, 0.85f);
+
         [Header("스무딩 (One Euro) — 낮은 minCutoff = 강한 스무딩, 높은 beta = 빠른 움직임 반응")]
         [SerializeField] float _handMinCutoff = 0.5f;
         [SerializeField] float _handBeta = 0.1f;
@@ -155,9 +163,25 @@ namespace Shinmyeong.Tracking
         /// 사람이 카메라 앞에 있는가 (히스테리시스 적용)
         public bool PersonPresent { get; private set; }
 
-        /// 손별 커서 위치, 뷰포트 좌표 (0~1 · y는 위가 1)
+        /// 손별 커서 위치, 뷰포트 좌표 (0~1 · y는 위가 1) — 리치 존 매핑 적용 후 값.
+        /// 파이프라인(필터·이상치 제거·유예)은 원시 카메라 공간에서 돌고, 매핑은 출력에서만 한다
         public bool GetHandValid(HandSide side) => Pipeline(side).Valid;
-        public Vector2 GetHandPos(HandSide side) => Pipeline(side).Pos;
+        public Vector2 GetHandPos(HandSide side) => MapHandZone(Pipeline(side).Pos);
+
+        /// 디버그 오버레이용 리치 존 읽기
+        public bool HandZoneEnabled => _handZoneEnabled;
+        public Vector2 HandZoneMin => _handZoneMin;
+        public Vector2 HandZoneMax => _handZoneMax;
+
+        Vector2 MapHandZone(Vector2 raw)
+        {
+            // Mock(마우스)은 화면 좌표 그대로가 자연스럽다 — 실카메라(MoveNet)일 때만 리치 존 적용
+            if (!_handZoneEnabled || ActiveProvider is MockPoseProvider)
+                return raw;
+            return new Vector2(
+                Mathf.Clamp01(Mathf.InverseLerp(_handZoneMin.x, _handZoneMax.x, raw.x)),
+                Mathf.Clamp01(Mathf.InverseLerp(_handZoneMin.y, _handZoneMax.y, raw.y)));
+        }
         public bool AnyHandValid => _leftHand.Valid || _rightHand.Valid;
 
         /// 유예 홀드 중인가 (신뢰도가 잠깐 꺼져 마지막 위치 유지 · 디버그용)

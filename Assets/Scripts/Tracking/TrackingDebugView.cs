@@ -48,6 +48,18 @@ namespace Shinmyeong.Tracking
             var coords = _service.Mirror ? new Rect(1, 0, -1, 1) : new Rect(0, 0, 1, 1);
             GUI.DrawTextureWithTexCoords(rect, tex, coords);
 
+            // 커서 리치 존 — 이 사각형 안의 손목 움직임이 화면 전체로 매핑된다 (튜닝용)
+            if (_service.HandZoneEnabled && _service.ActiveProvider is MoveNetPoseProvider)
+            {
+                var zMin = _service.HandZoneMin; // 뷰포트(y 위로) → 미리보기(y 아래로) 변환
+                var zMax = _service.HandZoneMax;
+                float zx = rect.x + zMin.x * rect.width;
+                float zy = rect.y + (1f - zMax.y) * rect.height;
+                float zw = (zMax.x - zMin.x) * rect.width;
+                float zh = (zMax.y - zMin.y) * rect.height;
+                DrawRectBorder(new Rect(zx, zy, zw, zh), 2f, HandColor);
+            }
+
             var frame = _service.LatestFrame;
             if (frame.Valid)
             {
@@ -103,6 +115,17 @@ namespace Shinmyeong.Tracking
                 return "무효";
             return _service.GetHandPos(side).ToString("F2")
                 + (_service.GetHandCoasting(side) ? " [유예]" : "");
+        }
+
+        static void DrawRectBorder(Rect r, float thickness, Color color)
+        {
+            var prev = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(new Rect(r.x, r.y, r.width, thickness), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.yMax - thickness, r.width, thickness), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.x, r.y, thickness, r.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(r.xMax - thickness, r.y, thickness, r.height), Texture2D.whiteTexture);
+            GUI.color = prev;
         }
 
         static void DrawDot(Vector2 center, float size, Color color)
