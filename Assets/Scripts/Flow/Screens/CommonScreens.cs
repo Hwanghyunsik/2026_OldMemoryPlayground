@@ -200,13 +200,17 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// 영상 화면 자리 (SCR-006 · 011 · 016 · 021 공통 틀) — 영상 자산 도입 전: 자동 진행 + 건너뛰기만 구현
+    /// 영상 화면 공통 틀 (SCR-006 · 011 · 016 · 021 · 2-5 v2.7 확정 좌표) — 영상 자산 도입 전 자리.
+    /// 영상 x320 y160 1280×720 · 자막 x380 y660(내부 하단 · 52px) · 진행 표시 x320 y902 ·
+    /// 자동 진행 안내 x660 y944 · 건너뛰기 x1472 y26 400×112(영상 밖 우측 상단 · dwell 3초 · 예외).
+    /// 다시 듣기·이야기 흐름 표시·진행 단계 UI를 두지 않는다(확정). TTS 허용 구간 — 음성 도입 시.
     public class VideoPlaceholderScreen : ScreenBase
     {
-        const float AutoSeconds = 5f;
+        const float AutoSeconds = 5f; // 영상 자리 재생 시간 — 실제 영상 길이로 대체된다
 
         string _title = "영상 (자리)";
         ScreenId _next = ScreenId.SCR_007;
+        Image _progressFill;
 
         public VideoPlaceholderScreen Setup(string title, ScreenId next)
         {
@@ -218,11 +222,30 @@ namespace Shinmyeong.Flow.Screens
         protected override void BuildUi()
         {
             UiKit.Panel(transform, "BG", new Color(0.08f, 0.08f, 0.1f));
-            UiKit.Panel(transform, "VideoArea", new Color(0.16f, 0.16f, 0.2f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.55f), new Vector2(1280, 720));
-            UiKit.Label(transform, "Title", new Vector2(0.5f, 0.55f), new Vector2(900, 80), 40, _title);
-            // 건너뛰기 — 영상 영역 밖 우측 상단 · 안전 영역 예외 (확정)
-            var skip = UiKit.Button(transform, "Skip", new Vector2(0.88f, 0.92f), new Vector2(220, 80), "건너뛰기",
+
+            // 영상 영역 x320 y160 1280×720 — 화면 전체가 아니라 축소 배치 (조작 버튼과 겹치지 않게 · 확정)
+            var video = UiKit.Panel(transform, "VideoArea", new Color(0.16f, 0.16f, 0.2f));
+            video.rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.5185f), new Vector2(1280, 720));
+            UiKit.Label(video.transform, "Title", new Vector2(0.5f, 0.6f), new Vector2(900, 120), 40, _title);
+
+            // 자막 — 영상 내부 하단 오버레이 x380 y660 1160×160 · 52px (대본 확정 시 채움)
+            var subtitle = UiKit.Label(transform, "Subtitle", new Vector2(0.5f, 0.3148f), new Vector2(1160, 160), 52, "");
+            subtitle.color = new Color(1f, 1f, 1f, 0.9f);
+
+            // 진행 표시 x320 y902 1280×26 — 시간 압박 요소가 아님 (숫자 없음)
+            var progressBg = UiKit.Panel(transform, "ProgressBg", new Color(1f, 1f, 1f, 0.14f));
+            progressBg.rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.1528f), new Vector2(1280, 26));
+            var fill = UiKit.Panel(progressBg.transform, "Fill", new Color(0.95f, 0.85f, 0.45f));
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Horizontal;
+            _progressFill = fill;
+
+            // 자동 진행 안내 x660 y944 600×66 (8-6-1 확정 문구)
+            UiKit.Label(transform, "AutoInfo", new Vector2(0.5f, 0.0954f), new Vector2(600, 66), 26,
+                "잠시 후 다음 이야기가 이어져요");
+
+            // 건너뛰기 x1472 y26 400×112 — 영상 밖 우측 상단 · 안전 영역 예외 (확정)
+            var skip = UiKit.Button(transform, "Skip", new Vector2(0.8708f, 0.9241f), new Vector2(400, 112), "건너뛰기",
                 () => Flow.Go(_next));
             skip.gameObject.AddComponent<SafeAreaExempt>().Reason = "영상 건너뛰기 — 영상 밖 우측 상단 (2-4 확정 예외)";
         }
@@ -233,7 +256,12 @@ namespace Shinmyeong.Flow.Screens
 
         IEnumerator AutoNext()
         {
-            yield return new WaitForSeconds(AutoSeconds);
+            float start = Time.time;
+            while (Time.time - start < AutoSeconds)
+            {
+                _progressFill.fillAmount = Mathf.Clamp01((Time.time - start) / AutoSeconds);
+                yield return null;
+            }
             Flow.Go(_next);
         }
     }

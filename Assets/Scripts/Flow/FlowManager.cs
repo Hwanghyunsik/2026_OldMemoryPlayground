@@ -56,15 +56,34 @@ namespace Shinmyeong.Flow
             Add<ModeSelectScreen>(ScreenId.SCR_004);
             Add<LobbyScreen>(ScreenId.SCR_005);
             Add<VideoPlaceholderScreen>(ScreenId.SCR_006).Setup("오프닝 영상 (자리)\n대본 미확정 · B2", ScreenId.SCR_007);
-            Add<TutorialScreen>(ScreenId.SCR_007);
+            Add<GameTutorialScreen>(ScreenId.SCR_007).Setup("수확하기", new[]
+            {
+                "반짝이는 작물을 찾아요",
+                "작물 위에 손을 올려요",
+                "아래로 당겨 주세요",
+            }, ScreenId.SCR_008);
             Add<HarvestPlayScreen>(ScreenId.SCR_008);
             Add<ResultScreen>(ScreenId.SCR_009);
             Add<VideoPlaceholderScreen>(ScreenId.SCR_011).Setup("연결 연출 1 (자리)\n수확 → 장보기", ScreenId.SCR_012);
-            Add<ShoppingTutorialScreen>(ScreenId.SCR_012);
+            // 「양발 고정 · 체중 싣기」류 표현 금지 · 지나가는 자리는 괜찮다는 점 명시 (설계서)
+            Add<GameTutorialScreen>(ScreenId.SCR_012).Setup("장보기", new[]
+            {
+                "빛나는 발판을 찾아요",
+                "그쪽으로 걸어가요 (지나가는 자리는 괜찮아요)",
+                "발판 위에서 잠깐 멈춰요",
+                "가운데로 돌아와요",
+            }, ScreenId.SCR_013);
             Add<ShoppingPlayScreen>(ScreenId.SCR_013);
             Add<ShoppingResultScreen>(ScreenId.SCR_014);
             Add<VideoPlaceholderScreen>(ScreenId.SCR_016).Setup("연결 연출 2 (자리)\n장보기 → 요리", ScreenId.SCR_017);
-            Add<CookingTutorialScreen>(ScreenId.SCR_017);
+            // 「외우지 않아도 괜찮아요」를 1단계에 — 기억 부담 불안을 먼저 낮춘다 (설계서)
+            Add<GameTutorialScreen>(ScreenId.SCR_017).Setup("요리하기", new[]
+            {
+                "음식과 재료를 봐요 (외우지 않아도 괜찮아요)",
+                "「다 외웠어요」에 손을 올려요",
+                "기억나는 재료에 손을 올려요",
+                "차림표는 언제든 다시 볼 수 있어요",
+            }, ScreenId.SCR_018);
             Add<CookingPlayScreen>(ScreenId.SCR_018);
             Add<CookingResultScreen>(ScreenId.SCR_019);
             Add<VideoPlaceholderScreen>(ScreenId.SCR_021).Setup("엔딩 영상 (자리)\n잔치 준비 끝", ScreenId.SCR_022);

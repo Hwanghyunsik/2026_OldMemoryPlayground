@@ -6,49 +6,7 @@ using Shinmyeong.Interaction;
 
 namespace Shinmyeong.Flow.Screens
 {
-    /// SCR-012 장보기 튜토리얼 — 4단계 · 하단 버튼만 모드별로 다르다
-    public class ShoppingTutorialScreen : ScreenBase
-    {
-        GameObject _freeButtons;
-        GameObject _storyButtons;
-
-        protected override void BuildUi()
-        {
-            UiKit.Panel(transform, "BG", new Color(0.11f, 0.13f, 0.16f));
-            UiKit.Label(transform, "Header", new Vector2(0.5f, 0.8f), new Vector2(900, 70), 46, "장보기 — 이렇게 해요");
-            UiKit.Panel(transform, "VideoArea", new Color(0.16f, 0.18f, 0.22f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.35f, 0.5f), new Vector2(640, 400));
-            UiKit.Label(transform, "VideoLabel", new Vector2(0.35f, 0.5f), new Vector2(600, 100), 30, "튜토리얼 영상 (자리)");
-            // 「양발 고정 · 체중 싣기 · 자세 버티기」류 표현 금지 — 지나가는 자리는 괜찮다는 점을 명시(설계서)
-            UiKit.Label(transform, "Steps", new Vector2(0.68f, 0.5f), new Vector2(520, 340), 28,
-                "1. 빛나는 발판을 찾아요\n\n2. 그쪽으로 걸어가요\n    (지나가는 자리는 괜찮아요)\n\n3. 발판 위에서 잠깐 멈춰요\n\n4. 가운데로 돌아와요");
-
-            _freeButtons = new GameObject("FreeButtons");
-            _freeButtons.transform.SetParent(transform, false);
-            UiKit.Stretch(_freeButtons);
-            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "이전으로",
-                () => Flow.Go(ScreenId.SCR_005));
-            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "시작하기",
-                () => Flow.Go(ScreenId.SCR_013), color: new Color(0.3f, 0.6f, 0.35f));
-            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.71f, 0.145f), new Vector2(240, 90), "사용자 변경",
-                () => Flow.Go(ScreenId.SCR_003));
-
-            _storyButtons = new GameObject("StoryButtons");
-            _storyButtons.transform.SetParent(transform, false);
-            UiKit.Stretch(_storyButtons);
-            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.145f), new Vector2(220, 90), "나가기",
-                () => Flow.Go(ScreenId.SCR_004));
-            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.145f), new Vector2(280, 100), "시작하기",
-                () => Flow.Go(ScreenId.SCR_013), color: new Color(0.3f, 0.6f, 0.35f));
-        }
-
-        protected override void OnEnter()
-        {
-            bool story = Flow.Mode == GameMode.Story;
-            _freeButtons.SetActive(!story);
-            _storyButtons.SetActive(story);
-        }
-    }
+    // SCR-012 장보기 튜토리얼은 GameTutorialScreen 공용 템플릿 사용 (2-5 확정: 템플릿 1 + 데이터 3벌)
 
     /// SCR-013 장보기 플레이 — 종료 이동처만 모드 분기 (개별 014 / 스토리 015)
     public class ShoppingPlayScreen : ScreenBase

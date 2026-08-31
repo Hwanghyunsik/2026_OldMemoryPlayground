@@ -5,49 +5,8 @@ using Shinmyeong.Games.Cooking;
 
 namespace Shinmyeong.Flow.Screens
 {
-    /// SCR-017 요리하기 튜토리얼 — 조리 시뮬레이션이 아니라 시각 기억 게임(설계서)
-    public class CookingTutorialScreen : ScreenBase
-    {
-        GameObject _freeButtons;
-        GameObject _storyButtons;
-
-        protected override void BuildUi()
-        {
-            UiKit.Panel(transform, "BG", new Color(0.15f, 0.12f, 0.11f));
-            UiKit.Label(transform, "Header", new Vector2(0.5f, 0.8f), new Vector2(900, 70), 46, "요리하기 — 이렇게 해요");
-            UiKit.Panel(transform, "VideoArea", new Color(0.2f, 0.17f, 0.16f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.35f, 0.5f), new Vector2(640, 400));
-            UiKit.Label(transform, "VideoLabel", new Vector2(0.35f, 0.5f), new Vector2(600, 100), 30, "튜토리얼 영상 (자리)");
-            // 「외우지 않아도 괜찮습니다」를 1단계에 — 기억 부담 불안을 먼저 낮춘다(설계서)
-            UiKit.Label(transform, "Steps", new Vector2(0.68f, 0.5f), new Vector2(520, 340), 28,
-                "1. 음식과 재료를 봐요\n    (외우지 않아도 괜찮아요)\n\n2. 「다 외웠어요」에 손을 올려요\n\n3. 기억나는 재료에 손을 올려요\n\n4. 차림표는 언제든 다시 볼 수 있어요");
-
-            _freeButtons = new GameObject("FreeButtons");
-            _freeButtons.transform.SetParent(transform, false);
-            UiKit.Stretch(_freeButtons);
-            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "이전으로",
-                () => Flow.Go(ScreenId.SCR_005));
-            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "시작하기",
-                () => Flow.Go(ScreenId.SCR_018), color: new Color(0.3f, 0.6f, 0.35f));
-            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.71f, 0.145f), new Vector2(240, 90), "사용자 변경",
-                () => Flow.Go(ScreenId.SCR_003));
-
-            _storyButtons = new GameObject("StoryButtons");
-            _storyButtons.transform.SetParent(transform, false);
-            UiKit.Stretch(_storyButtons);
-            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.145f), new Vector2(220, 90), "나가기",
-                () => Flow.Go(ScreenId.SCR_004));
-            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.145f), new Vector2(280, 100), "시작하기",
-                () => Flow.Go(ScreenId.SCR_018), color: new Color(0.3f, 0.6f, 0.35f));
-        }
-
-        protected override void OnEnter()
-        {
-            bool story = Flow.Mode == GameMode.Story;
-            _freeButtons.SetActive(!story);
-            _storyButtons.SetActive(story);
-        }
-    }
+    // SCR-017 요리하기 튜토리얼은 GameTutorialScreen 공용 템플릿 사용 (2-5 확정: 템플릿 1 + 데이터 3벌)
+    // — 조리 시뮬레이션이 아니라 시각 기억 게임(설계서)
 
     /// SCR-018 요리하기 재료 선택 (레시피 기억 팝업 SCR-018-1은 데모 내부의 하위 단계 화면 — 모드 공용)
     public class CookingPlayScreen : ScreenBase

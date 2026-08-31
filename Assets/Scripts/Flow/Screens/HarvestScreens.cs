@@ -5,50 +5,7 @@ using Shinmyeong.Games.Harvest;
 
 namespace Shinmyeong.Flow.Screens
 {
-    /// SCR-007 수확 튜토리얼 — 상단 구조는 두 모드 공용, 하단 버튼만 모드별로 다르다(설계서)
-    public class TutorialScreen : ScreenBase
-    {
-        GameObject _freeButtons;
-        GameObject _storyButtons;
-
-        protected override void BuildUi()
-        {
-            UiKit.Panel(transform, "BG", new Color(0.12f, 0.15f, 0.11f));
-            UiKit.Label(transform, "Header", new Vector2(0.5f, 0.8f), new Vector2(900, 70), 46, "수확하기 — 이렇게 해요");
-            UiKit.Panel(transform, "VideoArea", new Color(0.18f, 0.2f, 0.16f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.35f, 0.5f), new Vector2(640, 400));
-            UiKit.Label(transform, "VideoLabel", new Vector2(0.35f, 0.5f), new Vector2(600, 100), 30, "튜토리얼 영상 (자리)");
-            UiKit.Label(transform, "Steps", new Vector2(0.68f, 0.5f), new Vector2(500, 300), 30,
-                "1. 반짝이는 작물을 찾아요\n\n2. 작물 위에 손을 올려요\n\n3. 아래로 당겨 주세요");
-
-            // 개별 모드: 이전으로 · 시작하기 · 사용자 변경 (3종)
-            _freeButtons = new GameObject("FreeButtons");
-            _freeButtons.transform.SetParent(transform, false);
-            UiKit.Stretch(_freeButtons);
-            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "이전으로",
-                () => Flow.Go(ScreenId.SCR_005));
-            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "시작하기",
-                () => Flow.Go(ScreenId.SCR_008), color: new Color(0.3f, 0.6f, 0.35f));
-            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.71f, 0.145f), new Vector2(240, 90), "사용자 변경",
-                () => Flow.Go(ScreenId.SCR_003));
-
-            // 스토리 모드: 나가기 · 시작하기 (2종 · 나가기는 SCR-004 복귀)
-            _storyButtons = new GameObject("StoryButtons");
-            _storyButtons.transform.SetParent(transform, false);
-            UiKit.Stretch(_storyButtons);
-            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.145f), new Vector2(220, 90), "나가기",
-                () => Flow.Go(ScreenId.SCR_004));
-            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.145f), new Vector2(280, 100), "시작하기",
-                () => Flow.Go(ScreenId.SCR_008), color: new Color(0.3f, 0.6f, 0.35f));
-        }
-
-        protected override void OnEnter()
-        {
-            bool story = Flow.Mode == GameMode.Story;
-            _freeButtons.SetActive(!story);
-            _storyButtons.SetActive(story);
-        }
-    }
+    // SCR-007 수확 튜토리얼은 GameTutorialScreen 공용 템플릿 사용 (2-5 확정: 템플릿 1 + 데이터 3벌)
 
     /// SCR-008 수확 플레이 — 그림 한 벌을 두 모드가 공유, 종료 이동처만 분기(-S 규칙)
     public class HarvestPlayScreen : ScreenBase
