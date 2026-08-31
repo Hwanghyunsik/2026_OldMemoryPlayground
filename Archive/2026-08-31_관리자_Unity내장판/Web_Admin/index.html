@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>신명놀이터 관리자</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- POP-A-001 관리자 진입 번호 인증 — 팝업이 아닌 독립 화면 -->
+<div id="lock" class="lock">
+  <div class="lock-card">
+    <div class="brand">신명놀이터 <span>(가제)</span></div>
+    <div class="brand-sub">관리자 화면</div>
+    <p class="lock-guide">관리자 번호 4자리를 눌러 주세요</p>
+    <div class="dots" id="lock-dots"><i></i><i></i><i></i><i></i></div>
+    <div class="keypad" id="lock-keypad"></div>
+  </div>
+</div>
+
+<!-- 관리자 본 화면 -->
+<div id="app" class="app" hidden>
+  <aside class="side">
+    <div class="side-brand">신명놀이터<br><span>관리자</span></div>
+    <nav id="nav">
+      <button data-page="check">점검</button>
+      <button data-page="users">사용자 관리</button>
+      <button data-page="records">참여 기록</button>
+      <button data-page="stats">통계</button>
+      <button data-page="settings">설정</button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <!-- ADM-001 점검 -->
+    <section id="page-check" class="page">
+      <header class="page-head">
+        <div><h1>점검</h1><p>기기 상태를 확인합니다</p></div>
+        <div class="head-date" id="check-now"></div>
+      </header>
+      <div class="check-grid">
+        <div class="panel camera-panel">
+          <h2>카메라</h2>
+          <div class="camera-box" id="camera-box">
+            <span id="camera-person">사람 인식 확인 중</span>
+          </div>
+          <p class="camera-note">카메라 미리보기는 조건부 기능(C7) — 확인 후 연결</p>
+        </div>
+        <div class="panel">
+          <h2>지금 상태</h2>
+          <ul class="status-list">
+            <li><i class="light" id="light-camera"></i><b>카메라 연결</b><span id="text-camera"></span></li>
+            <li><i class="light" id="light-storage"></i><b>저장 공간</b><span id="text-storage"></span></li>
+            <li><i class="light" id="light-clock"></i><b>날짜·시각</b><span id="text-clock"></span></li>
+          </ul>
+          <div class="advice" id="check-advice" hidden></div>
+          <div class="install-note">
+            <b>잘 안될 때 확인하세요</b>
+            <p>· 카메라 선이 빠지지 않았는지 확인해 주세요</p>
+            <p>· 화면 앞 발자국 위치가 가려지지 않았는지 확인해 주세요</p>
+            <p>· 방이 너무 어둡지 않은지 확인해 주세요</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADM-002 사용자 관리 -->
+    <section id="page-users" class="page" hidden>
+      <header class="page-head">
+        <div><h1>사용자 관리</h1><p>참여하는 사용자를 등록하고 관리합니다 · 전체 <b id="users-total">0</b>명</p></div>
+        <button class="btn btn-primary" id="btn-add-user">+ 사용자 등록</button>
+      </header>
+      <div class="panel">
+        <div class="list-tools">
+          <input type="text" id="user-search" placeholder="이름으로 찾기">
+          <select id="user-sort">
+            <option value="name">이름순</option>
+            <option value="recent">최근 참여일순</option>
+          </select>
+        </div>
+        <table class="table" id="user-table">
+          <thead><tr>
+            <th>그림</th><th>이름</th><th>성별</th><th>등록일</th><th>최근 참여일</th><th>참여 횟수</th><th>관리</th>
+          </tr></thead>
+          <tbody id="user-rows"></tbody>
+        </table>
+        <div class="empty" id="users-empty" hidden></div>
+        <div class="paging" id="user-paging"></div>
+      </div>
+    </section>
+
+    <!-- ADM-004 참여 기록 (자리) -->
+    <section id="page-records" class="page" hidden>
+      <header class="page-head"><div><h1>참여 기록</h1><p>전체 참여 이력을 봅니다</p></div></header>
+      <div class="panel dev-note">다음 단계에서 구현합니다 (ADM-004 · ADM-005)</div>
+    </section>
+
+    <!-- ADM-006 통계 (자리) -->
+    <section id="page-stats" class="page" hidden>
+      <header class="page-head"><div><h1>통계</h1><p>시설 전체 운영 현황을 봅니다</p></div></header>
+      <div class="panel dev-note">다음 단계에서 구현합니다 (ADM-006 · ADM-006-2)</div>
+    </section>
+
+    <!-- ADM-008 설정 -->
+    <section id="page-settings" class="page" hidden>
+      <header class="page-head"><div><h1>설정</h1><p>관리자 번호와 프로그램을 관리합니다</p></div></header>
+      <div class="settings-col">
+        <div class="panel setting-row">
+          <div><b>관리자 번호 변경</b><p>관리 화면에 들어올 때 쓰는 4자리 번호를 바꿉니다</p></div>
+          <button class="btn" id="btn-pin">번호 변경</button>
+        </div>
+        <div class="panel setting-row">
+          <div><b>화면 잠그기</b><p>번호 입력 화면으로 돌아갑니다 · 사용자 화면은 그대로 돌아갑니다</p></div>
+          <button class="btn" id="btn-lock">잠그기</button>
+        </div>
+        <div class="panel setting-row">
+          <div><b>관리 화면 닫기</b><p>이 창만 닫습니다 · 사용자 화면은 그대로 돌아갑니다</p></div>
+          <button class="btn" id="btn-close">창 닫기</button>
+        </div>
+        <div class="panel setting-row muted">
+          <div><b>소리</b><p>소리 크기 · 음성 안내 — 음성 도입 시 연결합니다</p></div>
+        </div>
+        <div class="panel setting-row muted">
+          <div><b>프로그램 버전</b><p id="app-version">-</p></div>
+        </div>
+        <div class="panel setting-row danger-zone">
+          <div><b>프로그램 종료</b><p>사용자 화면(TV)까지 모두 종료됩니다</p></div>
+          <button class="btn btn-danger" id="btn-quit">프로그램 종료</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- POP-A-002 사용자 등록·수정 -->
+<div id="modal-user" class="modal" hidden>
+  <div class="modal-card">
+    <h2 id="user-modal-title">사용자 등록</h2>
+    <label class="field">
+      <span>이름 <small>시작 화면 카드에 그대로 나오는 이름 · 최대 5글자</small></span>
+      <input type="text" id="user-name" maxlength="5">
+    </label>
+    <div class="field">
+      <span>성별 <small>통계에만 쓰입니다</small></span>
+      <div class="gender-row">
+        <button class="pick" data-gender="남">남</button>
+        <button class="pick" data-gender="여">여</button>
+      </div>
+    </div>
+    <div class="field">
+      <span>그림 고르기 <small>글을 읽지 못해도 그림으로 본인 카드를 찾을 수 있어요 · 중복 사용 가능</small></span>
+      <div class="avatar-grid" id="avatar-grid"></div>
+    </div>
+    <p class="modal-note">카드 배경색은 저장할 때 자동으로 배정됩니다</p>
+    <div class="modal-actions">
+      <button class="btn" id="user-cancel">닫기</button>
+      <button class="btn btn-primary" id="user-save" disabled>저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- POP-A-003 공용 확인 팝업 -->
+<div id="modal-confirm" class="modal" hidden>
+  <div class="modal-card confirm-card">
+    <div class="confirm-icon" id="confirm-icon">?</div>
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-text"></p>
+    <div class="modal-actions">
+      <button class="btn" id="confirm-cancel">그만두기</button>
+      <button class="btn" id="confirm-run"></button>
+    </div>
+  </div>
+</div>
+
+<!-- POP-A-004 번호 변경 (3단계) -->
+<div id="modal-pin" class="modal" hidden>
+  <div class="modal-card pin-card">
+    <div class="pin-steps" id="pin-steps"><i></i><i></i><i></i></div>
+    <h2 id="pin-step-label"></h2>
+    <p id="pin-guide"></p>
+    <div class="dots" id="pin-dots"><i></i><i></i><i></i><i></i></div>
+    <div class="keypad" id="pin-keypad"></div>
+    <div class="modal-actions">
+      <button class="btn" id="pin-cancel">그만두기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>신명놀이터(가제) · 프로토타입</title>
+<style>
+  :root{--band:#2E5B3D;--acc:#4C8B5C;--t1:#2B342E;--t2:#6C766F;--line:#C5D2C8;--bg:#F7F7F5;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--t1);
+       font-family:'Noto Sans KR','맑은 고딕','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+       -webkit-text-size-adjust:100%;}
+  header{background:var(--band);color:#fff;padding:26px 20px 22px;}
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:-.3px;}
+  .sub{font-size:13.5px;color:#CFE0D6;line-height:1.6;}
+  main{padding:22px 20px 44px;}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 26px;}
+  @media (max-width:640px){ .cards{grid-template-columns:1fr;} h1{font-size:22px;} }
+  a.card{display:block;text-decoration:none;color:inherit;background:#fff;
+         border:2px solid var(--line);border-radius:18px;padding:22px 20px;
+         transition:border-color .15s, transform .15s;}
+  a.card:hover,a.card:focus{border-color:var(--acc);transform:translateY(-2px);}
+  a.card .big{font-size:20px;font-weight:800;margin-bottom:7px;}
+  a.card .desc{font-size:13.5px;color:var(--t2);line-height:1.65;}
+  a.card .go{display:inline-block;margin-top:14px;background:var(--acc);color:#fff;
+             font-size:14px;font-weight:700;border-radius:10px;padding:9px 18px;}
+  section{background:#fff;border:2px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;}
+  h2{margin:0 0 12px;font-size:16px;font-weight:800;color:var(--band);}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.6;}
+  th{background:#EDF2EE;font-weight:700;width:34%;}
+  .warn{background:#FDF3EF;border-color:#E8B9A8;}
+  .warn h2{color:#B4472B;}
+  ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.85;}
+  footer{text-align:center;font-size:12px;color:var(--t2);padding:0 20px 34px;}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <h1>신명놀이터 <span style="font-size:16px;font-weight:600;opacity:.85">(가제)</span></h1>
+  <div class="sub">인터랙티브 프로토타입 · 경일대학교 RISE 신속기술 솔루션 프로젝트 / 조이랩</div>
+</div></header>
+
+<main class="wrap">
+
+  <div class="cards">
+    <a class="card" target="_blank" rel="noopener" href="https://spectacular-pony-930cf3.netlify.app/">
+      <div class="big">사용자 화면</div>
+      <div class="desc">전체 32화면 · 게임 3종을 직접 조작해 볼 수 있습니다.<br>도면 위의 붉은 설명을 누르면 상세가 열립니다.</div>
+      <span class="go">열기 →</span>
+    </a>
+    <a class="card" target="_blank" rel="noopener" href="https://tranquil-faun-0d2a37.netlify.app/">
+      <div class="big">관리자 화면</div>
+      <div class="desc">전체 19화면 · 메뉴와 버튼을 눌러 실제 흐름대로 이동합니다.</div>
+      <span class="go">열기 →</span>
+    </a>
+  </div>
+
+  <section>
+    <h2>사용법</h2>
+    <table>
+      <tr><th>붉은 설명 누르기</th><td>그 요소의 세부 설명이 열립니다. 번호가 없는 설명도 열립니다.</td></tr>
+      <tr><th>화면 이동</th><td>위쪽 목록에서 원하는 화면을 고릅니다. PC에서는 ← → 방향키도 됩니다.</td></tr>
+      <tr><th>게임 화면</th><td>수확하기 · 장보기 · 요리하기는 기본이 <b>직접 조작 모드</b>입니다.<br>설명을 보려면 위쪽 <b>「■ 와이어프레임 보기」</b>를 누릅니다.</td></tr>
+      <tr><th>휴대폰</th><td>가로로 돌리면 크게 보입니다. 두 손가락으로 확대할 수 있습니다.</td></tr>
+      <tr><th>영상</th><td>영상 파일을 함께 올리지 않으면 그 자리에 화면 도면이 나옵니다.</td></tr>
+    </table>
+  </section>
+
+  <section class="warn">
+    <h2>읽고 봐 주세요</h2>
+    <ul>
+      <li>이 자료는 <b>검토용 프로토타입</b>입니다. 완성된 제품이 아닙니다.</li>
+      <li>배경과 오브젝트는 <b>자리표시(X 표시 상자)</b>입니다. 실제 그림은 디자인 작업 후 들어갑니다.</li>
+      <li>여기 보이는 수치와 문구를 <b>확정 사양으로 해석하지 마세요.</b> 규격은 화면설계서와 통합인계자료가 기준입니다.</li>
+      <li>실제 제품은 <b>카메라로 몸을 인식</b>해 조작합니다. 프로토타입에서는 마우스와 손가락으로 대신합니다.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  2026-08-12 기준 · 통합인계자료 v4.9 · 화면목록 v6.14<br>
+  <span style="font-size:11.5px;">주소를 직접 여실 수도 있습니다 —
+  사용자 <a href="https://spectacular-pony-930cf3.netlify.app/" style="color:#4C8B5C;">https://spectacular-pony-930cf3.netlify.app/</a> ·
+  관리자 <a href="https://tranquil-faun-0d2a37.netlify.app/" style="color:#4C8B5C;">https://tranquil-faun-0d2a37.netlify.app/</a></span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,178 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6624898712411491892
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 531984357821214857}
+  - component: {fileID: 2892466097139952329}
+  - component: {fileID: 3237513075252568785}
+  - component: {fileID: 3343065274238383680}
+  - component: {fileID: 5793162787377928235}
+  - component: {fileID: 1936622288334760095}
+  - component: {fileID: 965559066500273591}
+  - component: {fileID: 9036449859230066569}
+  - component: {fileID: 495408643255235506}
+  m_Layer: 0
+  m_Name: BodyTracking
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &531984357821214857
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2892466097139952329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7c9417c19758004396b0187956ff350, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Tracking.WebcamFeed
+  _deviceName: 
+  _requestedWidth: 1280
+  _requestedHeight: 720
+  _requestedFps: 30
+--- !u!114 &3237513075252568785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74165131ed9cfc0449faf8183bd870e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Tracking.MoveNetPoseProvider
+  _modelAsset: {fileID: 5022602860645237092, guid: 6c60d9202737934428e628a0fb2c71fc, type: 3}
+  _inputSize: 256
+  _webcam: {fileID: 0}
+  _backend: 256
+--- !u!114 &3343065274238383680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 798e79c12552b4a4dac881208ee11745, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Tracking.MockPoseProvider
+  _personPresent: 1
+--- !u!114 &5793162787377928235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e33e9fff2389f546b51962e410bce9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Tracking.BodyTrackingService
+  _moveNet: {fileID: 0}
+  _mock: {fileID: 0}
+  _minKeypointScore: 0.3
+  _personScoreThreshold: 0.35
+  _personAppearDelay: 0.3
+  _personLostDelay: 1.5
+  _mirror: 1
+  _handMinCutoff: 0.5
+  _handBeta: 0.1
+  _bodyMinCutoff: 0.4
+  _bodyBeta: 0.1
+  _followSharpness: 12
+  _weakScore: 0.45
+  _maxJump: 0.25
+  _maxConsecutiveRejects: 3
+--- !u!114 &1936622288334760095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a8b2df5ff675b64aabcb48d27aa725d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Tracking.TrackingDebugView
+  _service: {fileID: 0}
+  _visible: 1
+  _previewHeight: 240
+--- !u!114 &965559066500273591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59b9d1f59660a774ba68ee49477f095b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Interaction.DwellJudge
+  _uiCamera: {fileID: 0}
+--- !u!114 &9036449859230066569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f448d49a40307d9479dd174f89dd3af3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Interaction.ArrivalDemoView
+  _windowSeconds: 0.7
+  _maxDriftInWindow: 0.035
+  _enterHalfWidth: 0.06
+  _exitHalfWidth: 0.09
+  _zoneCenters:
+  - 0.15
+  - 0.325
+  - 0.5
+  - 0.675
+  - 0.85
+--- !u!114 &495408643255235506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6624898712411491892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad9fcb6d640732649bb58728c4da5148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Interaction.PullJudge
+  _armDelaySeconds: 0.4
+  _pullDistanceViewport: 0.11
+  JudgingEnabled: 1
