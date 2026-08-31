@@ -28,9 +28,12 @@ namespace Shinmyeong.Flow.Screens
     // SCR-002 사용자 감지·보정은 CalibrationScreen.cs (정식 구현 · 2026-08-31)
 
     /// SCR-003 사용자 선택 — 저장소의 등록 사용자 카드 + 비회원.
-    /// 사용자 등록·수정은 관리자 화면(FN-20) 몫 — 여기서는 선택만. 카드 아바타·페이징은 정식 구현에서.
+    /// 사용자 등록·수정은 관리자 화면(FN-20 · 타 팀 웹) 몫 — 여기서는 선택만.
+    /// 페이징(2-5 확정): 쪽당 8명 · 그리드 바깥 좌우 세로 버튼 + 현재 쪽 표시 · 그리드 안에 이동 카드 금지 ·
+    /// 첫/마지막 쪽에서는 해당 방향 버튼 자체를 표시하지 않는다(선택 불가 요소는 화면에서 뺀다 · 8-5 원칙).
     public class UserSelectScreen : ScreenBase
     {
+        const int UsersPerPage = 8;
         // 아바타 8종 자리 — 카드 배경색으로만 구분 (플레이스홀더 · SCR-023 헤더 아바타도 같은 색을 쓴다)
         internal static readonly Color[] CardColors =
         {
@@ -42,6 +45,7 @@ namespace Shinmyeong.Flow.Screens
 
         GameObject _cardsRoot;
         Text _emptyText;
+        int _page;
 
         protected override void BuildUi()
         {
@@ -77,7 +81,11 @@ namespace Shinmyeong.Flow.Screens
 #endif
         }
 
-        protected override void OnEnter() => RebuildCards();
+        protected override void OnEnter()
+        {
+            _page = 0;
+            RebuildCards();
+        }
 
         void RebuildCards()
         {
@@ -90,18 +98,27 @@ namespace Shinmyeong.Flow.Screens
             var users = Save.SaveStore.LoadUsers().Users;
             _emptyText.gameObject.SetActive(users.Count == 0);
 
-            // 한 줄 최대 4장 · 두 줄까지 (8명 초과 표시는 페이징과 함께 정식 구현에서)
-            int count = Mathf.Min(users.Count, 8);
+            int pages = Mathf.Max(1, Mathf.CeilToInt(users.Count / (float)UsersPerPage));
+            _page = Mathf.Clamp(_page, 0, pages - 1);
+            bool paged = pages > 1;
+
+            // 한 줄 최대 4장 · 두 줄까지. 페이징 시에는 좌우 세로 버튼 자리를 위해 간격·카드 폭을 줄인다
+            // (버튼·카드 모두 안전 영역 x420~1500 안)
+            int start = _page * UsersPerPage;
+            int count = Mathf.Min(users.Count - start, UsersPerPage);
+            float spacing = paged ? 0.115f : 0.14f;
             for (int i = 0; i < count; i++)
             {
-                var user = users[i];
+                var user = users[start + i];
                 int row = i / 4;
                 int colsInRow = row == 0 ? Mathf.Min(count, 4) : count - 4;
-                float x = 0.5f + (i % 4 - (colsInRow - 1) * 0.5f) * 0.14f; // 간격 0.14 — 4장일 때도 안전 영역(x420~1500) 안
+                float x = 0.5f + (i % 4 - (colsInRow - 1) * 0.5f) * spacing;
                 float y = count <= 4 ? 0.5f : row == 0 ? 0.57f : 0.4f;
-                var size = count <= 4 ? new Vector2(240, 280) : new Vector2(230, 140);
+                var size = count <= 4
+                    ? (paged ? new Vector2(210, 280) : new Vector2(240, 280))
+                    : (paged ? new Vector2(210, 140) : new Vector2(230, 140));
                 var color = CardColors[Mathf.Abs(user.CardColorIndex) % CardColors.Length];
-                var button = UiKit.Button(_cardsRoot.transform, $"User_{i}", new Vector2(x, y), size, user.Name, () =>
+                var button = UiKit.Button(_cardsRoot.transform, $"User_{start + i}", new Vector2(x, y), size, user.Name, () =>
                 {
                     Flow.IsGuest = false;
                     Flow.UserId = user.Id;
@@ -127,6 +144,19 @@ namespace Shinmyeong.Flow.Screens
                     labelRect.anchorMin = labelRect.anchorMax = tall ? new Vector2(0.5f, 0.18f) : new Vector2(0.7f, 0.5f);
                 }
             }
+
+            if (!paged)
+                return;
+
+            // 목록 이동 — 그리드 바깥 좌우 세로 버튼 + 현재 쪽 표시 (2-5 확정 · 그리드 안에 이동 카드 금지)
+            if (_page > 0)
+                UiKit.Button(_cardsRoot.transform, "PrevPage", new Vector2(0.245f, 0.5f), new Vector2(90, 260), "◀",
+                    () => { _page--; RebuildCards(); });
+            if (_page < pages - 1)
+                UiKit.Button(_cardsRoot.transform, "NextPage", new Vector2(0.755f, 0.5f), new Vector2(90, 260), "▶",
+                    () => { _page++; RebuildCards(); });
+            UiKit.Label(_cardsRoot.transform, "PageInfo", new Vector2(0.5f, 0.315f), new Vector2(220, 40), 28,
+                $"{_page + 1} / {pages}");
         }
     }
 
