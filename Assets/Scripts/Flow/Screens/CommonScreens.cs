@@ -25,36 +25,7 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// SCR-002 사용자 감지 · 보정 — 전신 확인 후 자동 진입 (체크리스트는 플레이스홀더)
-    public class CalibrationScreen : ScreenBase
-    {
-        const float HoldSeconds = 2f;
-
-        Text _status;
-        float _timer;
-
-        protected override void BuildUi()
-        {
-            UiKit.Panel(transform, "BG", new Color(0.10f, 0.14f, 0.14f));
-            UiKit.Label(transform, "Title", new Vector2(0.5f, 0.68f), new Vector2(1000, 80), 52, "잠시만 기다려 주세요");
-            _status = UiKit.Label(transform, "Status", new Vector2(0.5f, 0.45f), new Vector2(1000, 120), 34, "");
-        }
-
-        protected override void OnEnter() => _timer = 0f;
-
-        void Update()
-        {
-            var svc = BodyTrackingService.Instance;
-            bool ok = svc != null && svc.PersonPresent && svc.BodyValid;
-            _timer = ok ? _timer + Time.deltaTime : 0f;
-            if (_status != null)
-                _status.text = ok
-                    ? $"몸이 잘 보여요 ({Mathf.CeilToInt(HoldSeconds - _timer)})"
-                    : "전신이 화면에 들어오도록 서 주세요";
-            if (_timer >= HoldSeconds)
-                Flow.Go(ScreenId.SCR_003);
-        }
-    }
+    // SCR-002 사용자 감지·보정은 CalibrationScreen.cs (정식 구현 · 2026-08-31)
 
     /// SCR-003 사용자 선택 — 저장소의 등록 사용자 카드 + 비회원.
     /// 사용자 등록·수정은 관리자 화면(FN-20) 몫 — 여기서는 선택만. 카드 아바타·페이징은 정식 구현에서.
