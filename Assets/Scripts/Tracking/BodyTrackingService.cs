@@ -173,6 +173,12 @@ namespace Shinmyeong.Tracking
         public Vector2 HandZoneMin => _handZoneMin;
         public Vector2 HandZoneMax => _handZoneMax;
 
+        /// 손 세로 매핑 배율 — 리치 존이 켜지면 카메라 공간의 세로 거리가 화면 공간에서 1/(존 높이)배로 늘어난다.
+        /// 팔 움직임 물리 거리로 정의된 임계값(수확 당김 등)을 화면 공간으로 환산할 때 곱한다
+        public float HandMapScaleY => !_handZoneEnabled || ActiveProvider is MockPoseProvider
+            ? 1f
+            : 1f / Mathf.Max(0.05f, _handZoneMax.y - _handZoneMin.y);
+
         Vector2 MapHandZone(Vector2 raw)
         {
             // Mock(마우스)은 화면 좌표 그대로가 자연스럽다 — 실카메라(MoveNet)일 때만 리치 존 적용

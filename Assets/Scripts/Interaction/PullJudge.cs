@@ -17,7 +17,7 @@ namespace Shinmyeong.Interaction
         [Header("판정 기준값 (C8 기준안 · 실환경 테스트로 확정)")]
         [Tooltip("영역 진입 후 무장까지의 지연 (검토안 0.3~0.5초)")]
         [SerializeField] float _armDelaySeconds = 0.4f;
-        [Tooltip("당김으로 인정하는 최소 하강 거리 (뷰포트 비율 · 0.11 ≈ 120px@1080)")]
+        [Tooltip("당김으로 인정하는 최소 하강 거리 — 카메라 공간(팔 실제 움직임) 기준(C8 검증값 0.11).\n리치 존 매핑 배율은 판정 시 자동 환산되므로 존을 조정해도 이 값은 그대로 둔다")]
         [SerializeField] float _pullDistanceViewport = 0.11f;
 
         /// 라운드 연출 중에는 게임이 꺼 둔다
@@ -131,9 +131,11 @@ namespace Shinmyeong.Interaction
                     return;
                 }
 
-                // 하강 거리는 무장 이후 최고점 기준으로 잰다
+                // 하강 거리는 무장 이후 최고점 기준으로 잰다.
+                // 임계는 팔 물리 거리(카메라 공간)로 정의 — 리치 존 배율만큼 화면 공간으로 환산해
+                // 존을 켜거나 조정해도 실제 당김 동작 크기가 변하지 않게 한다
                 state.PeakY = Mathf.Max(state.PeakY, viewportY);
-                if (state.PeakY - viewportY >= _pullDistanceViewport)
+                if (state.PeakY - viewportY >= _pullDistanceViewport * svc.HandMapScaleY)
                 {
                     var pulled = state.Current;
                     state.Reset();
