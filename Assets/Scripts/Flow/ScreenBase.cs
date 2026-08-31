@@ -22,6 +22,10 @@ namespace Shinmyeong.Flow
             }
             gameObject.SetActive(true);
             OnEnter();
+#if UNITY_EDITOR
+            // 개발 검증: 화면에 놓인 인터랙션 요소의 안전 영역(2-4) 이탈을 경고 (게임 스테이지 초회 요소 포함)
+            UI.SafeArea.ValidateInteractables(transform, Id.ToString());
+#endif
         }
 
         public void Hide()

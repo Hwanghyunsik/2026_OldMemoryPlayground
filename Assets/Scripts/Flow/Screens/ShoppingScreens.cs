@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Shinmyeong.Games.Shopping;
+using Shinmyeong.Interaction;
 
 namespace Shinmyeong.Flow.Screens
 {
@@ -25,19 +26,19 @@ namespace Shinmyeong.Flow.Screens
             _freeButtons = new GameObject("FreeButtons");
             _freeButtons.transform.SetParent(transform, false);
             UiKit.Stretch(_freeButtons);
-            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.26f, 0.13f), new Vector2(220, 90), "이전으로",
+            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "이전으로",
                 () => Flow.Go(ScreenId.SCR_005));
-            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.13f), new Vector2(280, 100), "시작하기",
+            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "시작하기",
                 () => Flow.Go(ScreenId.SCR_013), color: new Color(0.3f, 0.6f, 0.35f));
-            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.74f, 0.13f), new Vector2(240, 90), "사용자 변경",
+            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.71f, 0.145f), new Vector2(240, 90), "사용자 변경",
                 () => Flow.Go(ScreenId.SCR_003));
 
             _storyButtons = new GameObject("StoryButtons");
             _storyButtons.transform.SetParent(transform, false);
             UiKit.Stretch(_storyButtons);
-            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.13f), new Vector2(220, 90), "나가기",
+            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.145f), new Vector2(220, 90), "나가기",
                 () => Flow.Go(ScreenId.SCR_004));
-            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.13f), new Vector2(280, 100), "시작하기",
+            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.145f), new Vector2(280, 100), "시작하기",
                 () => Flow.Go(ScreenId.SCR_013), color: new Color(0.3f, 0.6f, 0.35f));
         }
 
@@ -58,8 +59,9 @@ namespace Shinmyeong.Flow.Screens
         {
             UiKit.Panel(transform, "BG", new Color(0.12f, 0.13f, 0.11f));
             // 일시정지 — 장보기만 상단 좌측 220×116 (안전 영역 예외 · 확정 07 문서 2-4: x48 y34)
-            UiKit.Button(transform, "Pause", new Vector2(0.082f, 0.915f), new Vector2(220, 116),
+            var pause = UiKit.Button(transform, "Pause", new Vector2(0.082f, 0.915f), new Vector2(220, 116),
                 "일시정지", PausePopup.Open, color: new Color(0.3f, 0.3f, 0.35f));
+            pause.gameObject.AddComponent<SafeAreaExempt>().Reason = "장보기 일시정지 — 상단 좌측 (2-4 확정 예외)";
         }
 
         protected override void OnEnter()
@@ -116,11 +118,11 @@ namespace Shinmyeong.Flow.Screens
             UiKit.Panel(transform, "Ground", new Color(0f, 0f, 0f, 0.22f))
                 .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.31f), new Vector2(1080, 12));
 
-            UiKit.Button(transform, "Retry", new Vector2(0.3f, 0.13f), new Vector2(240, 95), "다시 하기",
+            UiKit.Button(transform, "Retry", new Vector2(0.3f, 0.145f), new Vector2(240, 95), "다시 하기",
                 () => Flow.Go(ScreenId.SCR_013));
-            UiKit.Button(transform, "Lobby", new Vector2(0.5f, 0.13f), new Vector2(280, 100), "다른 활동 고르기",
+            UiKit.Button(transform, "Lobby", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "다른 활동 고르기",
                 () => Flow.Go(ScreenId.SCR_005), color: new Color(0.3f, 0.6f, 0.35f));
-            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.7f, 0.13f), new Vector2(240, 95),
+            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.7f, 0.145f), new Vector2(240, 95),
                 "내 기록 보기", () => Flow.Go(ScreenId.SCR_023)).gameObject;
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Interaction;
 using Shinmyeong.Tracking;
 
 namespace Shinmyeong.Flow.Screens
@@ -87,20 +88,21 @@ namespace Shinmyeong.Flow.Screens
                     Flow.Go(ScreenId.SCR_004);
                 }, color: new Color(0.35f, 0.35f, 0.4f));
 
-            UiKit.Button(transform, "Home", new Vector2(0.26f, 0.13f), new Vector2(220, 90), "처음으로",
+            UiKit.Button(transform, "Home", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "처음으로",
                 () => Flow.Go(ScreenId.SCR_001));
 
             UiKit.Label(transform, "Hint", new Vector2(0.5f, 0.85f), new Vector2(900, 40), 26, "손을 3초간 올려두면 선택됩니다");
 
 #if UNITY_EDITOR
-            // 에디터 전용: 관리자 화면(FN-20) 구현 전 저장 검증용 사용자 등록
-            UiKit.Button(transform, "DevAddUser", new Vector2(0.9f, 0.13f), new Vector2(200, 70),
+            // 에디터 전용: 관리자 웹(타 팀) 연동 전 저장 검증용 사용자 등록
+            var devAdd = UiKit.Button(transform, "DevAddUser", new Vector2(0.9f, 0.13f), new Vector2(200, 70),
                 "+ 테스트 사용자", () =>
                 {
                     int n = Save.SaveStore.LoadUsers().Users.Count + 1;
                     Save.SaveStore.AddUser($"테스트{n}", n % 2 == 0 ? "남" : "여", (n - 1) % 8, (n - 1) % 8);
                     RebuildCards();
                 }, dwellSeconds: 1f, color: new Color(0.3f, 0.3f, 0.3f));
+            devAdd.gameObject.AddComponent<SafeAreaExempt>().Reason = "에디터 전용 개발 버튼 — 빌드 미포함";
 #endif
         }
 
@@ -124,7 +126,7 @@ namespace Shinmyeong.Flow.Screens
                 var user = users[i];
                 int row = i / 4;
                 int colsInRow = row == 0 ? Mathf.Min(count, 4) : count - 4;
-                float x = 0.5f + (i % 4 - (colsInRow - 1) * 0.5f) * 0.15f;
+                float x = 0.5f + (i % 4 - (colsInRow - 1) * 0.5f) * 0.14f; // 간격 0.14 — 4장일 때도 안전 영역(x420~1500) 안
                 float y = count <= 4 ? 0.5f : row == 0 ? 0.57f : 0.4f;
                 var size = count <= 4 ? new Vector2(240, 280) : new Vector2(230, 140);
                 var color = CardColors[Mathf.Abs(user.CardColorIndex) % CardColors.Length];
@@ -163,9 +165,9 @@ namespace Shinmyeong.Flow.Screens
                     Flow.Go(ScreenId.SCR_005);
                 }, color: new Color(0.25f, 0.45f, 0.6f));
 
-            UiKit.Button(transform, "Home", new Vector2(0.26f, 0.13f), new Vector2(220, 90), "처음으로",
+            UiKit.Button(transform, "Home", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "처음으로",
                 () => Flow.Go(ScreenId.SCR_001));
-            UiKit.Button(transform, "ChangeUser", new Vector2(0.74f, 0.13f), new Vector2(260, 90), "사용자 변경",
+            UiKit.Button(transform, "ChangeUser", new Vector2(0.71f, 0.145f), new Vector2(260, 90), "사용자 변경",
                 () => Flow.Go(ScreenId.SCR_003));
             UiKit.Label(transform, "Hint", new Vector2(0.5f, 0.87f), new Vector2(900, 40), 26, "손을 3초간 올려두면 선택됩니다");
         }
@@ -194,9 +196,9 @@ namespace Shinmyeong.Flow.Screens
             UiKit.Button(transform, "Cooking", new Vector2(0.65f, 0.5f), new Vector2(250, 300),
                 "요리하기\n(기억 놀이)", () => Flow.Go(ScreenId.SCR_017), color: new Color(0.5f, 0.35f, 0.45f));
 
-            UiKit.Button(transform, "Back", new Vector2(0.26f, 0.13f), new Vector2(220, 90), "이전으로",
+            UiKit.Button(transform, "Back", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "이전으로",
                 () => Flow.Go(ScreenId.SCR_004));
-            var records = UiKit.Button(transform, "Records", new Vector2(0.74f, 0.13f), new Vector2(260, 90),
+            var records = UiKit.Button(transform, "Records", new Vector2(0.71f, 0.145f), new Vector2(260, 90),
                 "내 기록 보기", () => Flow.Go(ScreenId.SCR_023));
             _recordsButton = records.gameObject;
         }
@@ -231,8 +233,9 @@ namespace Shinmyeong.Flow.Screens
                 .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.55f), new Vector2(1280, 720));
             UiKit.Label(transform, "Title", new Vector2(0.5f, 0.55f), new Vector2(900, 80), 40, _title);
             // 건너뛰기 — 영상 영역 밖 우측 상단 · 안전 영역 예외 (확정)
-            UiKit.Button(transform, "Skip", new Vector2(0.88f, 0.92f), new Vector2(220, 80), "건너뛰기",
+            var skip = UiKit.Button(transform, "Skip", new Vector2(0.88f, 0.92f), new Vector2(220, 80), "건너뛰기",
                 () => Flow.Go(_next));
+            skip.gameObject.AddComponent<SafeAreaExempt>().Reason = "영상 건너뛰기 — 영상 밖 우측 상단 (2-4 확정 예외)";
         }
 
         protected override void OnEnter() => StartCoroutine(AutoNext());

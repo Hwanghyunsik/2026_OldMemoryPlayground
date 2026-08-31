@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
 using Shinmyeong.Tracking;
+using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Shopping
 {
@@ -68,10 +69,8 @@ namespace Shinmyeong.Games.Shopping
         }
 
         RectTransform _stageRoot;
-        Text _roundText;
-        Text _elapsedText;
+        PlayHud _hud;
         Text _guideText;
-        Text _targetListText;
         RectTransform _userMarker;
         Image _basketPanel;
         readonly Image[] _pads = new Image[5];
@@ -178,11 +177,6 @@ namespace Shinmyeong.Games.Shopping
                 _userMarker.anchorMin = _userMarker.anchorMax = new Vector2(svc.BodyCenterX01, 0.27f);
                 _userMarker.anchoredPosition = Vector2.zero;
             }
-            if (_elapsedText != null)
-            {
-                int sec = Mathf.FloorToInt(Time.time - _startTime);
-                _elapsedText.text = $"{sec / 60:00}:{sec % 60:00}"; // 경과 시간 — 제한 아님(확정)
-            }
         }
 
         void BuildStage()
@@ -191,10 +185,8 @@ namespace Shinmyeong.Games.Shopping
             var floor = CreatePanel(_stageRoot, "Floor", new Color(0.3f, 0.27f, 0.22f));
             SetAnchors(floor.rectTransform, new Vector2(0f, 0.05f), new Vector2(1f, 0.32f));
 
-            // 상단 좌측은 일시정지 버튼 자리(장보기 예외 · 2-4) — 라운드 표기는 그 옆으로
-            _roundText = CreateText(_stageRoot, "Round", new Vector2(0.26f, 0.93f), new Vector2(300, 50), 34, "");
-            _elapsedText = CreateText(_stageRoot, "Elapsed", new Vector2(0.9f, 0.93f), new Vector2(200, 50), 32, "00:00");
-            _targetListText = CreateText(_stageRoot, "Targets", new Vector2(0.5f, 0.93f), new Vector2(800, 60), 34, "");
+            // 공통 HUD — 목표 패널(사야 할 것)·경과 시간·진행 레일 (2-5 확정) · 일시정지는 화면 쪽 상단 좌측(예외)
+            _hud = PlayHud.Create(_stageRoot);
             _guideText = CreateText(_stageRoot, "Guide", new Vector2(0.5f, 0.66f), new Vector2(1000, 60), 34, "");
 
             // 발판 5 + 점포 4 + 중앙 장바구니 (세로 1:1 정렬)
@@ -260,8 +252,8 @@ namespace Shinmyeong.Games.Shopping
             Debug.Log("[Shopping] ===== 10라운드 종료 =====\n" + string.Join("\n", _records));
             _play.DurationSec = Time.time - _startTime; // timeScale=0 정지로 일시정지 시간은 이미 제외됨
             _play.PausedSec = GamePause.AccumulatedSec;
-            _guideText.text = "장보기를 마쳤어요";
-            _targetListText.text = "";
+            _hud.SetGoal("장보기를 마쳤어요");
+            _guideText.text = "";
             yield return new WaitForSeconds(1.2f);
             Finished?.Invoke(_play, _records);
         }
@@ -330,7 +322,7 @@ namespace Shinmyeong.Games.Shopping
                 _prevTargetPad = picked;
             }
 
-            _roundText.text = $"{round} / 10 라운드";
+            _hud.SetRound(round); // 라운드 표시는 HUD 진행 레일 하나뿐 (중복 배치 금지)
             float roundStart = Time.time;
             bool roundAllCorrect = true;
 
@@ -343,7 +335,7 @@ namespace Shinmyeong.Games.Shopping
 
                 UpdateTargetList(targets, boughtList, ti);
                 SetLights(targetZone, storeLit: true, padCReturn: false);
-                _guideText.text = "빛나는 발판으로 가서 잠깐 멈춰 서 주세요";
+                _guideText.text = "빛나는 발판으로 이동하세요"; // 8-6-1 확정 문구
 
                 // ① 점포 도착 대기 — 다른 점포에 멈추면 그대로 구매 (실패 없음 · 확정 5-11)
                 float waitStart = Time.time;
@@ -462,7 +454,7 @@ namespace Shinmyeong.Games.Shopping
                 else
                     parts.Add($"<color=#888888>{_stores[targets[i]].Displayed}</color>");
             }
-            _targetListText.text = "사야 할 것 :  " + string.Join("   ", parts);
+            _hud.SetGoal("사야 할 것 :  " + string.Join("   ", parts));
         }
 
         /// 유의미한 몸 이동은 유효 행동으로 힌트 타이머를 리셋한다 (C4 기준안).

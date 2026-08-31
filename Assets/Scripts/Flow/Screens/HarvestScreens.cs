@@ -25,20 +25,20 @@ namespace Shinmyeong.Flow.Screens
             _freeButtons = new GameObject("FreeButtons");
             _freeButtons.transform.SetParent(transform, false);
             UiKit.Stretch(_freeButtons);
-            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.26f, 0.13f), new Vector2(220, 90), "이전으로",
+            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "이전으로",
                 () => Flow.Go(ScreenId.SCR_005));
-            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.13f), new Vector2(280, 100), "시작하기",
+            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "시작하기",
                 () => Flow.Go(ScreenId.SCR_008), color: new Color(0.3f, 0.6f, 0.35f));
-            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.74f, 0.13f), new Vector2(240, 90), "사용자 변경",
+            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.71f, 0.145f), new Vector2(240, 90), "사용자 변경",
                 () => Flow.Go(ScreenId.SCR_003));
 
             // 스토리 모드: 나가기 · 시작하기 (2종 · 나가기는 SCR-004 복귀)
             _storyButtons = new GameObject("StoryButtons");
             _storyButtons.transform.SetParent(transform, false);
             UiKit.Stretch(_storyButtons);
-            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.13f), new Vector2(220, 90), "나가기",
+            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.145f), new Vector2(220, 90), "나가기",
                 () => Flow.Go(ScreenId.SCR_004));
-            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.13f), new Vector2(280, 100), "시작하기",
+            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.145f), new Vector2(280, 100), "시작하기",
                 () => Flow.Go(ScreenId.SCR_008), color: new Color(0.3f, 0.6f, 0.35f));
         }
 
@@ -118,11 +118,11 @@ namespace Shinmyeong.Flow.Screens
             UiKit.Panel(transform, "Ground", new Color(0f, 0f, 0f, 0.22f))
                 .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.31f), new Vector2(1080, 12));
 
-            UiKit.Button(transform, "Retry", new Vector2(0.3f, 0.13f), new Vector2(240, 95), "다시 하기",
+            UiKit.Button(transform, "Retry", new Vector2(0.3f, 0.145f), new Vector2(240, 95), "다시 하기",
                 () => Flow.Go(ScreenId.SCR_008));
-            UiKit.Button(transform, "Lobby", new Vector2(0.5f, 0.13f), new Vector2(280, 100), "다른 활동 고르기",
+            UiKit.Button(transform, "Lobby", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "다른 활동 고르기",
                 () => Flow.Go(ScreenId.SCR_005), color: new Color(0.3f, 0.6f, 0.35f));
-            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.7f, 0.13f), new Vector2(240, 95),
+            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.7f, 0.145f), new Vector2(240, 95),
                 "내 기록 보기", () => Flow.Go(ScreenId.SCR_023)).gameObject;
         }
 

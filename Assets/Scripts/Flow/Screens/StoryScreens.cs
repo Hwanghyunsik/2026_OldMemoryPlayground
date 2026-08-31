@@ -270,9 +270,9 @@ namespace Shinmyeong.Flow.Screens
             }
 
             // 버튼 2종 — 처음 화면으로(좌 · 주 CTA) · 내 기록 보기(우) · 안전 영역 안 (확정 9-3)
-            UiKit.Button(transform, "Home", new Vector2(0.42f, 0.13f), new Vector2(300, 100),
+            UiKit.Button(transform, "Home", new Vector2(0.42f, 0.145f), new Vector2(300, 100),
                 "처음 화면으로", () => Flow.Go(ScreenId.SCR_004), color: new Color(0.3f, 0.6f, 0.35f));
-            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.6f, 0.13f), new Vector2(280, 95),
+            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.6f, 0.145f), new Vector2(280, 95),
                 "내 기록 보기", OpenRecords).gameObject;
 
             var gaugeBg = UiKit.Panel(transform, "GaugeBg", new Color(1f, 1f, 1f, 0.15f));

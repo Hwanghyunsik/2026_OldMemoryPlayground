@@ -47,7 +47,7 @@ namespace Shinmyeong.Flow.Screens
                 _summaryValues[i] = UiKit.Label(card.transform, "Value", new Vector2(0.5f, 0.32f), new Vector2(260, 46), 34, "");
             }
 
-            UiKit.Button(transform, "Back", new Vector2(0.5f, 0.115f), new Vector2(260, 95), "이전으로",
+            UiKit.Button(transform, "Back", new Vector2(0.5f, 0.145f), new Vector2(260, 95), "이전으로",
                 () => Flow.GoBack());
         }
 

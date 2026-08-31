@@ -25,19 +25,19 @@ namespace Shinmyeong.Flow.Screens
             _freeButtons = new GameObject("FreeButtons");
             _freeButtons.transform.SetParent(transform, false);
             UiKit.Stretch(_freeButtons);
-            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.26f, 0.13f), new Vector2(220, 90), "이전으로",
+            UiKit.Button(_freeButtons.transform, "Back", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "이전으로",
                 () => Flow.Go(ScreenId.SCR_005));
-            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.13f), new Vector2(280, 100), "시작하기",
+            UiKit.Button(_freeButtons.transform, "Start", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "시작하기",
                 () => Flow.Go(ScreenId.SCR_018), color: new Color(0.3f, 0.6f, 0.35f));
-            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.74f, 0.13f), new Vector2(240, 90), "사용자 변경",
+            UiKit.Button(_freeButtons.transform, "ChangeUser", new Vector2(0.71f, 0.145f), new Vector2(240, 90), "사용자 변경",
                 () => Flow.Go(ScreenId.SCR_003));
 
             _storyButtons = new GameObject("StoryButtons");
             _storyButtons.transform.SetParent(transform, false);
             UiKit.Stretch(_storyButtons);
-            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.13f), new Vector2(220, 90), "나가기",
+            UiKit.Button(_storyButtons.transform, "Exit", new Vector2(0.32f, 0.145f), new Vector2(220, 90), "나가기",
                 () => Flow.Go(ScreenId.SCR_004));
-            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.13f), new Vector2(280, 100), "시작하기",
+            UiKit.Button(_storyButtons.transform, "Start", new Vector2(0.62f, 0.145f), new Vector2(280, 100), "시작하기",
                 () => Flow.Go(ScreenId.SCR_018), color: new Color(0.3f, 0.6f, 0.35f));
         }
 
@@ -128,11 +128,11 @@ namespace Shinmyeong.Flow.Screens
             UiKit.Label(transform, "BottomTitle", new Vector2(0.2f, 0.415f), new Vector2(380, 36), 26, "다른 재료가 들어간 음식");
 
             // 다시 하기 = 레시피 기억부터 재시작 (재료 선택만 반복하면 기억 과제가 성립하지 않는다 · 설계서)
-            UiKit.Button(transform, "Retry", new Vector2(0.3f, 0.13f), new Vector2(240, 95), "다시 하기",
+            UiKit.Button(transform, "Retry", new Vector2(0.3f, 0.145f), new Vector2(240, 95), "다시 하기",
                 () => Flow.Go(ScreenId.SCR_018));
-            UiKit.Button(transform, "Lobby", new Vector2(0.5f, 0.13f), new Vector2(280, 100), "다른 활동 고르기",
+            UiKit.Button(transform, "Lobby", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "다른 활동 고르기",
                 () => Flow.Go(ScreenId.SCR_005), color: new Color(0.3f, 0.6f, 0.35f));
-            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.7f, 0.13f), new Vector2(240, 95),
+            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.7f, 0.145f), new Vector2(240, 95),
                 "내 기록 보기", () => Flow.Go(ScreenId.SCR_023)).gameObject;
         }
 

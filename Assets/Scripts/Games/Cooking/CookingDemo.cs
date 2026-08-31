@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
+using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Cooking
 {
@@ -67,9 +68,7 @@ namespace Shinmyeong.Games.Cooking
         }
 
         RectTransform _stageRoot;
-        Text _roundText;
-        Text _elapsedText;
-        Text _targetText;
+        PlayHud _hud;
         GameObject _candRoot;
         GameObject _slotRoot;
         readonly List<Candidate> _cands = new List<Candidate>();
@@ -135,21 +134,11 @@ namespace Shinmyeong.Games.Cooking
             }
         }
 
-        void Update()
-        {
-            if (_elapsedText != null && _stageRoot != null)
-            {
-                int sec = Mathf.FloorToInt(Time.time - _startTime);
-                _elapsedText.text = $"{sec / 60:00}:{sec % 60:00}"; // 경과 시간 — 제한 아님(확정)
-            }
-        }
-
         void BuildStage()
         {
-            _roundText = CreateText(_stageRoot, "Round", new Vector2(0.12f, 0.93f), new Vector2(300, 50), 34, "");
-            _elapsedText = CreateText(_stageRoot, "Elapsed", new Vector2(0.9f, 0.93f), new Vector2(200, 50), 32, "00:00");
-            // 목표 패널 — 음식 이름만 상시 표시 (완성 음식 이미지는 플레이 중 금지 · 6-7)
-            _targetText = CreateText(_stageRoot, "Target", new Vector2(0.5f, 0.93f), new Vector2(700, 60), 40, "");
+            // 공통 HUD — 목표 패널(음식 이름만 · 완성 음식 이미지는 플레이 중 금지 6-7)·경과 시간·진행 레일.
+            // 레시피 팝업(불투명 차폐)이 나중에 조립되어 HUD 위를 덮는다
+            _hud = PlayHud.Create(_stageRoot);
 
             _slotRoot = new GameObject("Slots");
             _slotRoot.transform.SetParent(_stageRoot, false);
@@ -162,7 +151,8 @@ namespace Shinmyeong.Games.Cooking
             // 차림표 다시 보기 — dwell 3초(UI 버튼)
             var review = CreatePanel(_stageRoot, "ReviewButton", new Color(0.35f, 0.42f, 0.55f));
             var reviewRect = review.rectTransform;
-            reviewRect.anchorMin = reviewRect.anchorMax = new Vector2(0.14f, 0.45f);
+            // 안전 영역(2-4 · x420~) 안으로 — 하단 좌측, 일시정지(중앙)와 나란히
+            reviewRect.anchorMin = reviewRect.anchorMax = new Vector2(0.28f, 0.15f);
             reviewRect.sizeDelta = new Vector2(210, 100);
             CreateText(review.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(200, 90), 28, "차림표\n다시 보기");
             var reviewTarget = review.gameObject.AddComponent<DwellTarget>();
@@ -218,7 +208,7 @@ namespace Shinmyeong.Games.Cooking
             Debug.Log("[Cooking] ===== 10라운드 종료 =====\n" + string.Join("\n", _records));
             _play.DurationSec = Time.time - _startTime; // timeScale=0 정지로 일시정지 시간은 이미 제외됨
             _play.PausedSec = GamePause.AccumulatedSec;
-            _targetText.text = "요리를 마쳤어요";
+            _hud.SetGoal("요리를 마쳤어요");
             yield return new WaitForSeconds(1.2f);
             Finished?.Invoke(_play, _records);
         }
@@ -226,8 +216,8 @@ namespace Shinmyeong.Games.Cooking
         IEnumerator RunRound(int round)
         {
             var recipe = Recipes[round - 1];
-            _roundText.text = $"{round} / 10 라운드";
-            _targetText.text = $"「{recipe.Food}」을(를) 만들어요";
+            _hud.SetRound(round); // 라운드 표시는 HUD 진행 레일 하나뿐 (중복 배치 금지)
+            _hud.SetGoal($"「{recipe.Food}」에 넣을 재료를 골라 주세요"); // 8-6-1 확정 문구
 
             BuildCandidates(recipe);
             BuildSlots(recipe.Answers.Length);

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
+using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Harvest
 {
@@ -37,7 +38,7 @@ namespace Shinmyeong.Games.Harvest
         PlayRecord _play;
         float _startTime;
         RectTransform _stageRoot;
-        Text _instruction;
+        PlayHud _hud;
         RectTransform _basket;
         Image _basketImage;
         GameObject _arrow;
@@ -99,7 +100,7 @@ namespace Shinmyeong.Games.Harvest
 
         void BuildStage()
         {
-            _instruction = CreateText(_stageRoot, "Instruction", new Vector2(0.5f, 0.9f), new Vector2(900, 70), 44, "");
+            _hud = PlayHud.Create(_stageRoot); // 공통 HUD — 목표 패널·경과 시간·진행 레일 (2-5 확정)
 
             // 하단 중앙은 일시정지 버튼 자리(2-4 확정) — 바구니는 우측으로 (임시 배치 · 자산 적용 시 정리)
             var basketGo = CreateImage(_stageRoot, "Basket", new Vector2(0.74f, 0.16f), new Vector2(240, 130),
@@ -121,7 +122,7 @@ namespace Shinmyeong.Games.Harvest
             Debug.Log("[Harvest] ===== 10라운드 종료 =====\n" + string.Join("\n", _records));
             _play.DurationSec = Time.time - _startTime; // timeScale=0 정지로 일시정지 시간은 이미 제외됨
             _play.PausedSec = GamePause.AccumulatedSec;
-            _instruction.text = "수확을 마쳤어요";
+            _hud.SetGoal("수확을 마쳤어요");
             yield return new WaitForSeconds(1.2f);
             Finished?.Invoke(_play, _records);
         }
@@ -160,7 +161,9 @@ namespace Shinmyeong.Games.Harvest
                 _crops.Add(CreateCrop(kind, name, new Vector2(SlotX(count, i), 0.68f)));
             }
 
-            _instruction.text = $"{round}라운드 · {targetName}을(를) 아래로 당겨 주세요";
+            // 라운드 표시는 HUD 진행 레일 하나뿐(중복 배치 금지) · 안내는 8-6-1 확정 문구 + 목표 데이터
+            _hud.SetRound(round);
+            _hud.SetGoal($"「{targetName}」 손을 대고 아래로 당겨 주세요");
             if (PullJudge.Instance != null)
                 PullJudge.Instance.JudgingEnabled = false;
 
