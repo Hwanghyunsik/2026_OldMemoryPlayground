@@ -169,7 +169,8 @@ namespace Shinmyeong.Flow.Screens
                 card.rectTransform.SetSizeWithAnchors(new Vector2(x, y), new Vector2(125, 115));
                 if (tilt)
                     card.rectTransform.localRotation = Quaternion.Euler(0, 0, i % 2 == 0 ? -8f : 8f);
-                UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(115, 100), 26, row[i].label);
+                if (!UI.ArtCatalog.TryAddIcon(card, UI.ArtCatalog.Ingredient, row[i].label))
+                    UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(115, 100), 26, row[i].label);
                 if (row[i].count > 1)
                 {
                     var badge = UiKit.Label(card.transform, "Badge", new Vector2(0.85f, 0.85f), new Vector2(56, 32), 24,

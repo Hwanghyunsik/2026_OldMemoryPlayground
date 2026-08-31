@@ -62,7 +62,9 @@ namespace Shinmyeong.Games.Shopping
             public StoreDef Def;
             public GameObject Go;
             public Image Panel;
+            public bool HasArt;   // 점포 그림 적용 여부 — 점등 색 처리 분기용
             public Text ItemText;
+            public Image ItemIcon;
             public GameObject DoneBadge;
             public string Displayed;
             public bool Purchased;
@@ -223,6 +225,11 @@ namespace Shinmyeong.Games.Shopping
                 itemRect.sizeDelta = new Vector2(150, 80);
                 var itemText = CreateText(itemBox.transform, "Item", new Vector2(0.5f, 0.5f), new Vector2(140, 70), 30, "");
                 itemText.color = new Color(0.15f, 0.15f, 0.15f);
+                // 재료 그림 자리 — 진열이 라운드마다 바뀌므로 라운드 시작 시 적용 (Docs/92)
+                var itemIcon = CreatePanel(itemBox.transform, "Icon", Color.white);
+                SetAnchors(itemIcon.rectTransform, new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.94f));
+                itemIcon.preserveAspect = true;
+                itemIcon.gameObject.SetActive(false);
 
                 var badge = CreateText(store.transform, "Done", new Vector2(0.5f, 0.08f), new Vector2(150, 34), 24, "샀어요 ✓").gameObject;
                 badge.GetComponent<Text>().color = new Color(0.5f, 0.95f, 0.6f);
@@ -233,7 +240,9 @@ namespace Shinmyeong.Games.Shopping
                     Def = def,
                     Go = store.gameObject,
                     Panel = store,
+                    HasArt = ArtCatalog.TryApply(store, ArtCatalog.Store, def.Name),
                     ItemText = itemText,
+                    ItemIcon = itemIcon,
                     DoneBadge = badge,
                 };
             }
@@ -277,7 +286,7 @@ namespace Shinmyeong.Games.Shopping
             {
                 bool visible = activeStoreZones.Contains(kv.Key);
                 kv.Value.Go.SetActive(visible);
-                kv.Value.Panel.color = StoreNormal;
+                kv.Value.Panel.color = kv.Value.HasArt ? Color.white : StoreNormal;
                 kv.Value.Purchased = false;
                 kv.Value.DoneBadge.SetActive(false);
             }
@@ -293,7 +302,9 @@ namespace Shinmyeong.Games.Shopping
                 if (candidates.Count == 0)
                     candidates.AddRange(store.Def.Pool);
                 store.Displayed = candidates[_rng.Next(candidates.Count)];
-                store.ItemText.text = store.Displayed;
+                bool itemArt = ArtCatalog.TryApply(store.ItemIcon, ArtCatalog.Ingredient, store.Displayed);
+                store.ItemIcon.gameObject.SetActive(itemArt);
+                store.ItemText.text = itemArt ? "" : store.Displayed;
                 // 한 판 같은 재료 3회 이하는 「진열」 기준 (04 구성표 진열 규칙 #3)
                 _itemUseCount[store.Displayed] = _itemUseCount.TryGetValue(store.Displayed, out var used) ? used + 1 : 1;
             }
@@ -439,7 +450,8 @@ namespace Shinmyeong.Games.Shopping
             }
             foreach (var kv in _stores)
                 if (kv.Value.Go.activeSelf)
-                    kv.Value.Panel.color = kv.Key == targetZone && storeLit ? StoreLit : StoreNormal;
+                    kv.Value.Panel.color = kv.Key == targetZone && storeLit ? StoreLit
+                        : kv.Value.HasArt ? Color.white : StoreNormal; // 그림 점포는 흰색이 기본(무착색), 점등은 틴트
         }
 
         void UpdateTargetList(List<int> targets, List<(string item, bool correct)> bought, int currentIndex)

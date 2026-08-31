@@ -64,6 +64,8 @@ namespace Shinmyeong.Flow.Screens
             _avatar.color = profile != null
                 ? UserSelectScreen.CardColors[Mathf.Abs(profile.CardColorIndex) % UserSelectScreen.CardColors.Length]
                 : new Color(0.35f, 0.35f, 0.4f);
+            if (profile != null)
+                UI.ArtCatalog.TryApply(_avatar, UI.ArtCatalog.Avatar, $"아바타{profile.AvatarIndex + 1}");
 
             var records = string.IsNullOrEmpty(Flow.UserId)
                 ? new List<PlayRecord>()

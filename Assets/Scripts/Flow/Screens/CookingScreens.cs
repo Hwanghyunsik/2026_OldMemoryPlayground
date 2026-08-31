@@ -172,8 +172,9 @@ namespace Shinmyeong.Flow.Screens
                 float x = 0.135f + i * 0.081f;
                 var card = UiKit.Panel(transform, $"Food_{foods[i]}", color);
                 card.rectTransform.SetSizeWithAnchors(new Vector2(x, y), new Vector2(115, 110));
-                // 완성 음식 이미지 자리 — 자산 도입 시 교체 (6-7: 개별·간이 결과에서 사용 가능)
-                UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(108, 100), 25, foods[i]);
+                // 완성 음식 그림이 있으면 교체 (6-7: 개별·간이 결과에서 사용 가능)
+                if (!UI.ArtCatalog.TryAddIcon(card, UI.ArtCatalog.Food, foods[i]))
+                    UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(108, 100), 25, foods[i]);
                 _items.Add(card.gameObject);
             }
         }

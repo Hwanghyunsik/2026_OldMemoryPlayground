@@ -169,9 +169,15 @@ namespace Shinmyeong.Flow.Screens
                 card.rectTransform.SetSizeWithAnchors(new Vector2(x, y), new Vector2(115, 110));
                 if (tilt)
                     card.rectTransform.localRotation = Quaternion.Euler(0, 0, i % 2 == 0 ? -8f : 8f);
-                // 벌레 먹은 것만 아이콘 병기 (플레이스홀더 — 자산 도입 시 큰 벌레 아이콘)
-                string label = row[i].Result == "벌레" ? $"{row[i].Picked}\n🐛" : row[i].Picked;
-                UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(108, 100), 26, label);
+                // 놓인 작물 그림이 있으면 교체 · 벌레 먹은 것만 아이콘 병기 (자산 도입 시 큰 벌레 아이콘)
+                bool hasArt = UI.ArtCatalog.TryAddIcon(card, UI.ArtCatalog.CropLaid, row[i].Picked);
+                if (!hasArt)
+                {
+                    string label = row[i].Result == "벌레" ? $"{row[i].Picked}\n🐛" : row[i].Picked;
+                    UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(108, 100), 26, label);
+                }
+                else if (row[i].Result == "벌레")
+                    UiKit.Label(card.transform, "Bug", new Vector2(0.8f, 0.2f), new Vector2(44, 40), 30, "🐛");
                 _items.Add(card.gameObject);
             }
         }

@@ -130,13 +130,31 @@ namespace Shinmyeong.Flow.Screens
                 float y = count <= 4 ? 0.5f : row == 0 ? 0.57f : 0.4f;
                 var size = count <= 4 ? new Vector2(240, 280) : new Vector2(230, 140);
                 var color = CardColors[Mathf.Abs(user.CardColorIndex) % CardColors.Length];
-                UiKit.Button(_cardsRoot.transform, $"User_{i}", new Vector2(x, y), size, user.Name, () =>
+                var button = UiKit.Button(_cardsRoot.transform, $"User_{i}", new Vector2(x, y), size, user.Name, () =>
                 {
                     Flow.IsGuest = false;
                     Flow.UserId = user.Id;
                     Flow.UserName = user.Name;
                     Flow.Go(ScreenId.SCR_004);
                 }, color: color);
+
+                // 아바타 그림이 있으면 카드 상단(세로형)/좌측(가로형)에 얹고 이름을 비켜 배치 (Docs/92)
+                var avatar = UI.ArtCatalog.Get(UI.ArtCatalog.Avatar, $"아바타{user.AvatarIndex + 1}");
+                if (avatar != null)
+                {
+                    bool tall = size.y > size.x * 0.8f;
+                    var avatarGo = new GameObject("Avatar");
+                    avatarGo.transform.SetParent(button.transform, false);
+                    var img = avatarGo.AddComponent<Image>();
+                    img.sprite = avatar;
+                    img.preserveAspect = true;
+                    img.raycastTarget = false;
+                    var avatarRect = avatarGo.GetComponent<RectTransform>();
+                    avatarRect.anchorMin = avatarRect.anchorMax = tall ? new Vector2(0.5f, 0.62f) : new Vector2(0.27f, 0.5f);
+                    avatarRect.sizeDelta = tall ? new Vector2(150, 150) : new Vector2(100, 100);
+                    var labelRect = (RectTransform)button.transform.Find("Label");
+                    labelRect.anchorMin = labelRect.anchorMax = tall ? new Vector2(0.5f, 0.18f) : new Vector2(0.7f, 0.5f);
+                }
             }
         }
     }

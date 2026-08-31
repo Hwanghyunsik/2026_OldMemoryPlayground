@@ -355,7 +355,9 @@ namespace Shinmyeong.Games.Cooking
                 var rect = panel.rectTransform;
                 rect.anchorMin = rect.anchorMax = new Vector2(xs[i % 3], ys[i / 3]);
                 rect.sizeDelta = new Vector2(180, 150);
-                CreateText(panel.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(170, 130), 34, chosen[i]);
+                // 재료 그림이 있으면 아이콘으로 — 칸 색은 뒤에 남아 판정·힌트 색 표현 유지 (Docs/92)
+                if (!ArtCatalog.TryAddIcon(panel, ArtCatalog.Ingredient, chosen[i]))
+                    CreateText(panel.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(170, 130), 34, chosen[i]);
 
                 var target = panel.gameObject.AddComponent<DwellTarget>();
                 target.SetDwellSeconds(_pickDwellSeconds); // 요리 재료 1~2초 기준안 (C3)
@@ -395,7 +397,8 @@ namespace Shinmyeong.Games.Cooking
             cand.Picked = true;
             cand.Panel.color = CandPicked;
             cand.Target.enabled = false;
-            _slotTexts[_picks.Count].text = cand.Item;
+            if (!ArtCatalog.TryAddIcon(_slotPanels[_picks.Count], ArtCatalog.Ingredient, cand.Item))
+                _slotTexts[_picks.Count].text = cand.Item;
             _picks.Add(cand.Item);
             if (_firstPickSec < 0f)
                 _firstPickSec = Time.time - _roundT0; // 반응 시간 — 정답 여부 무관, 첫 선택 확정 시점(18-4)

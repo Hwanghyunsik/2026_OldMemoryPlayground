@@ -30,6 +30,7 @@ namespace Shinmyeong.Flow.Screens
         protected abstract string ConfirmText { get; }  // 확인 문구 (없으면 null)
         protected abstract string NextText { get; }     // 다음 단계 권유
         protected abstract ScreenId NextScreen { get; }
+        protected abstract string ArtCategory { get; } // 수집물 그림 분류 (Docs/92)
         protected abstract List<Collectible> BuildCollectibles();
 
         protected override void BuildUi()
@@ -112,7 +113,8 @@ namespace Shinmyeong.Flow.Screens
                 rect.SetSizeWithAnchors(new Vector2(x, y), new Vector2(130, 120));
                 if (tilt)
                     rect.localRotation = Quaternion.Euler(0, 0, i % 2 == 0 ? -8f : 8f);
-                UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(120, 100), 28, row[i].Label);
+                if (!UI.ArtCatalog.TryAddIcon(card, ArtCategory, row[i].Label))
+                    UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(120, 100), 28, row[i].Label);
                 if (row[i].Count > 1)
                 {
                     var badge = UiKit.Label(card.transform, "Badge", new Vector2(0.85f, 0.85f), new Vector2(60, 34), 24,
@@ -149,6 +151,7 @@ namespace Shinmyeong.Flow.Screens
         protected override string ConfirmText => "필요한 재료가 모였어요";
         protected override string NextText => "이제 시장에 다녀올까요?";
         protected override ScreenId NextScreen => ScreenId.SCR_011;
+        protected override string ArtCategory => UI.ArtCatalog.CropLaid;
 
         protected override List<Collectible> BuildCollectibles()
         {
@@ -170,6 +173,7 @@ namespace Shinmyeong.Flow.Screens
         protected override string ConfirmText => "필요한 것을 다 담았어요";
         protected override string NextText => "이제 부엌으로 가 볼까요?";
         protected override ScreenId NextScreen => ScreenId.SCR_016;
+        protected override string ArtCategory => UI.ArtCatalog.Ingredient;
 
         protected override List<Collectible> BuildCollectibles()
         {
@@ -192,6 +196,7 @@ namespace Shinmyeong.Flow.Screens
         protected override string ConfirmText => null; // 8-6-1 확정 문구는 2단 구조
         protected override string NextText => "이제 상을 차려 볼까요?";
         protected override ScreenId NextScreen => ScreenId.SCR_021;
+        protected override string ArtCategory => UI.ArtCatalog.Food;
 
         protected override List<Collectible> BuildCollectibles()
         {

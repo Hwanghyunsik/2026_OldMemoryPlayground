@@ -234,8 +234,12 @@ namespace Shinmyeong.Games.Harvest
             // 벌레 먹은 것만 상시 식별 표식(어두운 색+표기) · 다른 작물은 목표와 같은 표현
             var color = kind == Kind.Bug ? new Color(0.45f, 0.35f, 0.2f) : new Color(0.4f, 0.7f, 0.35f);
             var go = CreateImage(_stageRoot, $"Crop_{name}_{kind}", anchor, new Vector2(160, 160), color, true);
-            CreateText(go.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(150, 60), 30,
-                kind == Kind.Bug ? $"{name}\n(벌레)" : name);
+            // 자산이 있으면 매달린/벌레 그림으로 교체, 없으면 색+라벨 플레이스홀더 (Docs/92)
+            bool hasArt = ArtCatalog.TryApply(go.GetComponent<Image>(),
+                kind == Kind.Bug ? ArtCatalog.CropBug : ArtCatalog.CropHanging, name);
+            if (!hasArt)
+                CreateText(go.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(150, 60), 30,
+                    kind == Kind.Bug ? $"{name}\n(벌레)" : name);
             go.AddComponent<PullTarget>();
             return new Crop
             {
