@@ -1,36 +1,35 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Flow;
 
 namespace Shinmyeong.UI
 {
-    /// 플레이 화면 공통 HUD (07 문서 2-3·2-5 확정) — 게임 3종이 공유한다.
-    ///   상단 중앙: 목표 제시 패널 1000×116
-    ///   상단 우측: 경과 시간 372×116 (제한 시간 아님 · 숫자만, 게이지·경고 없음)
-    ///   우측 세로: 진행 레일 220×800 · 1~10 공통 · 현재 라운드 강조
-    /// 전부 비인터랙션 표시 요소 — 안전 영역(2-4) 적용 대상이 아니다.
-    /// 진행 표시는 이 레일 하나뿐 — 두 곳에 중복 배치하지 않는다(확정).
+    /// 플레이 화면 공통 HUD (07 문서 2-3·2-5 · 시안 SCR-008/013/018) — 게임 3종이 공유한다.
+    ///   상단 종이 헤더(Title-bg 1184×182 · x329 y50): 목표 제시 — 문구 + 목표 그림, 장보기는 GoalRoot에 칩 3개
+    ///   상단 우측 경과 시간(Time-Bg 285×127 · x1590 y65): 제한 시간 아님 · 숫자만
+    ///   우측 세로 진행 레일(122×705 · x1752 y255): 1~10 · 현재 라운드 초록 강조 · 지난 라운드 옅은 초록
+    /// 전부 비인터랙션 표시 요소 — 안전 영역(2-4) 적용 대상이 아니다. 진행 표시는 이 레일 하나뿐(중복 배치 금지).
     /// 스테이지 루트에 붙여 게임 End(루트 파괴)와 수명을 같이한다.
     public class PlayHud : MonoBehaviour
     {
+        public RectTransform GoalRoot { get; private set; }
+
         Text _goalText;
+        Image _goalIcon;
         Text _elapsedText;
         readonly Image[] _cells = new Image[10];
         readonly Text[] _cellTexts = new Text[10];
         float _clockStart;
 
-        static readonly Color PanelColor = new Color(0f, 0f, 0f, 0.35f);
-        static readonly Color CellFuture = new Color(1f, 1f, 1f, 0.10f);
-        static readonly Color CellDone = new Color(0.5f, 0.62f, 0.42f, 0.85f);
-        static readonly Color CellCurrent = new Color(1f, 0.85f, 0.25f);
+        static readonly Color CellFuture = Skin.Tan;
+        static readonly Color CellDone = Skin.Hex("9fbfa9");
+        static readonly Color CellCurrent = Skin.Green;
 
         public static PlayHud Create(Transform parent)
         {
             var go = new GameObject("PlayHud");
             go.transform.SetParent(parent, false);
-            var rect = go.AddComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.sizeDelta = Vector2.zero;
+            UiKit.Stretch(go);
             var hud = go.AddComponent<PlayHud>();
             hud.Build();
             return hud;
@@ -38,28 +37,29 @@ namespace Shinmyeong.UI
 
         void Build()
         {
-            // 목표 제시 패널 — 상단 중앙 1000×116 (2-5 확정)
-            var goal = Panel(transform, "GoalPanel", new Vector2(0.5f, 0.922f), new Vector2(1000, 116));
-            _goalText = Label(goal.transform, "Text", new Vector2(480, 100), 38, "");
+            // 목표 제시 — 종이 헤더 (x329 y50 1184×182)
+            GoalRoot = UiKit.HeaderPaper(transform, 329, 50);
+            _goalIcon = UiKit.ImgFit(GoalRoot, "TargetIcon", null, 286, 32, 113, 110);
+            _goalIcon.gameObject.SetActive(false);
+            _goalText = UiKit.Txt(GoalRoot, "Instruction", 0, 60, 1184, 55, "", 40, 6, Skin.Ink);
 
-            // 경과 시간 — 상단 우측 372×116 · 제한 아님(확정 5-9)
-            var elapsed = Panel(transform, "ElapsedPanel", new Vector2(0.878f, 0.922f), new Vector2(372, 116));
-            _elapsedText = Label(elapsed.transform, "Text", new Vector2(340, 90), 40, "00:00");
+            // 경과 시간 (x1590 y65 285×127) — 제한 아님(5-9)
+            var elapsed = UiKit.Node(transform, "ElapsedTime", 1590, 65, 285, 127);
+            UiKit.Img(elapsed, "Box", "Time-Bg", 1, -1, 283, 129);
+            UiKit.Txt(elapsed, "Label", 110, 20, 150, 35, "경과 시간", 25, 6, Skin.BrownDark);
+            _elapsedText = UiKit.Txt(elapsed, "Value", 110, 57, 150, 48, "00 : 00", 38, 7, Skin.Green);
 
-            // 진행 레일 — 우측 세로 220×800 · 1이 위 · 경과 시간 아래로 내려 겹치지 않게
-            var rail = Panel(transform, "ProgressRail", new Vector2(0.918f, 0.48f), new Vector2(220, 800));
+            // 진행 레일 (x1752 y255 122×705) — 1이 위
+            var rail = UiKit.Node(transform, "StageProgress", 1752, 255, 122, 705);
+            UiKit.Img(rail, "Frame", "Box-Round-28", 0, 0, 122, 705, Color.white, sliced: true);
+            UiKit.Img(rail, "Face", "Box-Round-23", 4, 5, 113, 695, Skin.Paper, sliced: true);
+            UiKit.Img(rail, "Outline", "Box-Round-23-Outline", 4, 5, 113, 695, Skin.Outline, sliced: true);
             for (int i = 0; i < 10; i++)
             {
-                var cellGo = new GameObject($"Round_{i + 1}");
-                cellGo.transform.SetParent(rail.transform, false);
-                var img = cellGo.AddComponent<Image>();
-                img.raycastTarget = false;
-                img.color = CellFuture;
-                var cellRect = cellGo.GetComponent<RectTransform>();
-                cellRect.anchorMin = cellRect.anchorMax = new Vector2(0.5f, 1f - (i + 0.5f) / 10f);
-                cellRect.sizeDelta = new Vector2(64, 64);
-                _cells[i] = img;
-                _cellTexts[i] = Label(cellGo.transform, "Num", new Vector2(60, 40), 24, (i + 1).ToString());
+                float y = 27f + i * 65.7f;
+                var cell = UiKit.Img(rail, $"Stage{i + 1}", "Circle-52", 33, y, 55, 55, CellFuture);
+                _cells[i] = cell;
+                _cellTexts[i] = UiKit.Txt(cell.transform, "Number", 0, 0, 55, 55, (i + 1).ToString(), 30, 6, Skin.Muted);
             }
 
             _clockStart = Time.time;
@@ -69,55 +69,44 @@ namespace Shinmyeong.UI
         {
             // timeScale=0 일시정지 중에는 Time.time이 멈춰 「일시정지 시간 제외」가 자동 충족된다
             int sec = Mathf.FloorToInt(Time.time - _clockStart);
-            _elapsedText.text = $"{sec / 60:00}:{sec % 60:00}";
+            _elapsedText.text = $"{sec / 60:00} : {sec % 60:00}";
         }
 
-        /// 목표 제시 패널 내용 (게임별 데이터 + 8-6-1 확정 안내 문구)
-        public void SetGoal(string text) => _goalText.text = text;
+        /// 목표 제시 패널 내용 (게임별 데이터 + 8-6-1 확정 안내 문구). 목표 그림이 있으면 왼쪽에 함께 보인다
+        public void SetGoal(string text, Sprite icon = null)
+        {
+            _goalText.text = text;
+            bool hasIcon = icon != null;
+            _goalIcon.gameObject.SetActive(hasIcon);
+            if (hasIcon)
+            {
+                _goalIcon.sprite = icon;
+                UiKit.Place(_goalText.rectTransform, 425, 60, 700, 55);
+                _goalText.alignment = TextAnchor.MiddleLeft;
+            }
+            else
+            {
+                UiKit.Place(_goalText.rectTransform, 0, 60, 1184, 55);
+                _goalText.alignment = TextAnchor.MiddleCenter;
+            }
+        }
 
-        /// 현재 라운드(1~10) 강조 — 지난 라운드는 완료 색
+        /// 기본 문구 표시를 끄고 GoalRoot에 게임이 직접 그린다 (장보기 목표 칩)
+        public void UseCustomGoal()
+        {
+            _goalText.gameObject.SetActive(false);
+            _goalIcon.gameObject.SetActive(false);
+        }
+
+        /// 현재 라운드(1~10) 강조 — 지난 라운드는 완료 색 (성패 무관 동일 색 · Q3 확정)
         public void SetRound(int round)
         {
             for (int i = 0; i < 10; i++)
             {
                 bool current = i == round - 1;
                 _cells[i].color = current ? CellCurrent : i < round - 1 ? CellDone : CellFuture;
-                _cellTexts[i].color = current ? new Color(0.2f, 0.15f, 0f) : Color.white;
-                _cells[i].rectTransform.localScale = current ? Vector3.one * 1.15f : Vector3.one;
+                _cellTexts[i].color = current ? Color.white : i < round - 1 ? Color.white : Skin.Muted;
             }
-        }
-
-        // ---- 조립 헬퍼 (X-Box 단계 · 자산 도입 시 프리팹 교체) ----
-
-        static Image Panel(Transform parent, string name, Vector2 anchor, Vector2 size)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var img = go.AddComponent<Image>();
-            img.color = PanelColor;
-            img.raycastTarget = false;
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.sizeDelta = size;
-            return img;
-        }
-
-        static Text Label(Transform parent, string name, Vector2 size, int fontSize, string content)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var text = go.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.supportRichText = true;
-            text.text = content;
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            return text;
         }
     }
 }

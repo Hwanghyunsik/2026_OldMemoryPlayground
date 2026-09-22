@@ -4,10 +4,10 @@ using UnityEngine.UI;
 
 namespace Shinmyeong.UI
 {
-    /// 그림 자산 창구 (Docs/92 규격). 코드가 그림을 찾는 유일한 경로 —
-    /// `Resources/Art/<분류>/<한글 이름>.png`에 스프라이트가 있으면 쓰고,
-    /// 없으면 호출부가 X-Box 플레이스홀더(색 박스 + 라벨)를 유지한다.
-    /// 자산이 일부만 도착해도 있는 것만 교체된다 (코드 수정 없는 교체가 목적).
+    /// 그림 자산 창구 (Docs/92 규격). 코드가 게임 데이터(작물·재료·음식·점포·아바타) 그림을 찾는 유일한 경로.
+    /// 찾는 순서: ① `Resources/Art/<분류>/<한글 이름>.png`(발주 규격 · 한글명 그대로)
+    ///           ② 디자인 시안 자산 `Assets/UI Image`(UiCatalog) — 번호 파일명이라 아래 별칭표로 잇는다
+    /// 둘 다 없으면 호출부가 X-Box 플레이스홀더(색 박스 + 라벨)를 유지한다. 부분 수령도 있는 것만 교체된다.
     public static class ArtCatalog
     {
         // 분류 폴더명 — Docs/92_자산규격_플레이스홀더.md 2장과 1:1
@@ -20,6 +20,62 @@ namespace Shinmyeong.UI
         public const string Avatar = "아바타";
         public const string Stage = "무대";
 
+        /// 시안 샘플 자산 별칭 (2026-09 수령분 · 번호 파일명 → 게임 데이터 한글명).
+        /// 미수령: 벌레 작물 7종(토마토만 있음) · 재료 8종(밥·팥·김·갈비·달걀·곶감·간장·솔잎)
+        static readonly Dictionary<string, string> Alias = new Dictionary<string, string>
+        {
+            // 작물 8종 (매달린 · 놓인 것은 같은 그림 대체)
+            [CropHanging + "/토마토"] = "SCR-008-Vegetable-01",
+            [CropHanging + "/가지"] = "SCR-008-Vegetable-02",
+            [CropHanging + "/고추"] = "SCR-008-Vegetable-03",
+            [CropHanging + "/대추"] = "SCR-008-Vegetable-04",
+            [CropHanging + "/오이"] = "SCR-008-Vegetable-05",
+            [CropHanging + "/감"] = "SCR-008-Vegetable-06",
+            [CropHanging + "/밤"] = "SCR-008-Vegetable-07",
+            [CropHanging + "/호박"] = "SCR-008-Vegetable-08",
+            [CropBug + "/토마토"] = "SCR-008-Vegetable-01-Bug",
+            // 재료 (장보기 점포 S1~S4 번호 + 작물 공용)
+            [Ingredient + "/밀가루"] = "SCR-013-S1-Food-01",
+            [Ingredient + "/깨"] = "SCR-013-S1-Food-03",
+            [Ingredient + "/쌀가루"] = "SCR-013-S1-Food-05",
+            [Ingredient + "/파"] = "SCR-013-S2-Food-01",
+            [Ingredient + "/시금치"] = "SCR-013-S2-Food-02",
+            [Ingredient + "/당근"] = "SCR-013-S2-Food-03",
+            [Ingredient + "/버섯"] = "SCR-013-S2-Food-04",
+            [Ingredient + "/소고기"] = "SCR-013-S3-Food-01",
+            [Ingredient + "/두부"] = "SCR-013-S3-Food-03",
+            [Ingredient + "/미역"] = "SCR-013-S4-Food-01",
+            [Ingredient + "/김치"] = "SCR-013-S4-Food-02",
+            [Ingredient + "/당면"] = "SCR-013-S4-Food-05",
+            [Ingredient + "/호박"] = "SCR-008-Vegetable-08",
+            [Ingredient + "/밤"] = "SCR-008-Vegetable-07",
+            // 완성 음식 10종
+            [Food + "/잡채"] = "SCR-018-Food-01",
+            [Food + "/김치전"] = "SCR-018-Food-02",
+            [Food + "/산적"] = "SCR-018-Food-03",
+            [Food + "/김밥"] = "SCR-018-Food-04",
+            [Food + "/갈비찜"] = "SCR-018-Food-05",
+            [Food + "/송편"] = "SCR-018-Food-06",
+            [Food + "/수정과"] = "SCR-018-Food-07",
+            [Food + "/호박죽"] = "SCR-018-Food-08",
+            [Food + "/미역국"] = "SCR-018-Food-09",
+            [Food + "/두부조림"] = "SCR-018-Food-10",
+            // 점포 4종
+            [Store + "/방앗간"] = "SCR-013-Score-01",
+            [Store + "/채소 가게"] = "SCR-013-Score-02",
+            [Store + "/정육점"] = "SCR-013-Score-03",
+            [Store + "/건어물·반찬"] = "SCR-013-Score-04",
+            // 아바타 8종
+            [Avatar + "/아바타1"] = "Avatar_01",
+            [Avatar + "/아바타2"] = "Avatar_02",
+            [Avatar + "/아바타3"] = "Avatar_03",
+            [Avatar + "/아바타4"] = "Avatar_04",
+            [Avatar + "/아바타5"] = "Avatar_05",
+            [Avatar + "/아바타6"] = "Avatar_06",
+            [Avatar + "/아바타7"] = "Avatar_07",
+            [Avatar + "/아바타8"] = "Avatar_08",
+        };
+
         static readonly Dictionary<string, Sprite> _cache = new Dictionary<string, Sprite>();
 
         public static Sprite Get(string category, string name)
@@ -28,9 +84,11 @@ namespace Shinmyeong.UI
             if (_cache.TryGetValue(key, out var sprite))
                 return sprite;
             sprite = Resources.Load<Sprite>("Art/" + key);
+            if (sprite == null && Alias.TryGetValue(key, out var alias))
+                sprite = Skin.Sprite(alias);
             // 「놓인」 작물은 생략 가능(발주서) — 없으면 매달린 것으로 대체
             if (sprite == null && category == CropLaid)
-                sprite = Resources.Load<Sprite>("Art/" + CropHanging + "/" + name);
+                sprite = Get(CropHanging, name);
             _cache[key] = sprite; // null도 캐시해 매번 디스크를 뒤지지 않는다
             return sprite;
         }
@@ -42,8 +100,14 @@ namespace Shinmyeong.UI
             var sprite = Get(category, name);
             if (sprite == null)
                 return false;
+            AddIcon(panel.transform, sprite, inset);
+            return true;
+        }
+
+        public static Image AddIcon(Transform parent, Sprite sprite, float inset = 0.06f)
+        {
             var go = new GameObject("ArtIcon");
-            go.transform.SetParent(panel.transform, false);
+            go.transform.SetParent(parent, false);
             var image = go.AddComponent<Image>();
             image.sprite = sprite;
             image.preserveAspect = true;
@@ -52,7 +116,7 @@ namespace Shinmyeong.UI
             rect.anchorMin = new Vector2(inset, inset);
             rect.anchorMax = new Vector2(1f - inset, 1f - inset);
             rect.sizeDelta = Vector2.zero;
-            return true;
+            return image;
         }
 
         /// 스프라이트가 있으면 Image에 적용하고 true — 없으면 건드리지 않고 false(플레이스홀더 유지).
@@ -64,6 +128,7 @@ namespace Shinmyeong.UI
                 return false;
             image.sprite = sprite;
             image.color = Color.white;
+            image.type = Image.Type.Simple;
             image.preserveAspect = true;
             return true;
         }

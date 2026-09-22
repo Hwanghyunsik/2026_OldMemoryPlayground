@@ -29,3 +29,6 @@ Thumbs.db
 sysinfo.txt
 *.stackdump
 crashlytics-build.properties
+
+# 개발 캡처
+/Captures/

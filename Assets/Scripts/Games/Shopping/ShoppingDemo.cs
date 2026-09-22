@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Flow;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
 using Shinmyeong.Tracking;
@@ -9,7 +10,7 @@ using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Shopping
 {
-    /// 장보기 정식 게임 루프 (그래픽은 X-Box 플레이스홀더 — 자산 도입 시 교체).
+    /// 장보기 정식 게임 루프 (무대 그림은 시안 SCR-013: 점포 4종 · 상품 카드 · 발판 5 · 장바구니 · 목표 칩).
     /// 04 게임구성표 확정 데이터 그대로:
     ///   R1~R4 발판 3(L1·C·R1)·점포 2 · R5~ 발판 5·점포 4 · 목표 R1~2:1·R3~7:2·R8~10:3 (합 21 · Q2 질의)
     ///   점포-재료 매핑 고정 · 진열 무작위: 한 판 같은 재료 진열 3회 이하 · 라운드 내 중복 진열은
@@ -27,31 +28,33 @@ namespace Shinmyeong.Games.Shopping
         [SerializeField] float _enterHalfWidth = 0.06f;
         [SerializeField] float _exitHalfWidth = 0.09f;
         [SerializeField] float _hintIntervalSeconds = 10f;
-        [Tooltip("힌트 타이머를 리셋하는 유효 이동 변위(C4 기준안) — 발판 간격 0.175의 절반 수준. 제자리 흔들림은 못 미친다")]
+        [Tooltip("힌트 타이머를 리셋하는 유효 이동 변위(C4 기준안) — 발판 간격 0.167의 절반 수준. 제자리 흔들림은 못 미친다")]
         [SerializeField] float _hintMoveResetDelta = 0.08f;
 
         /// 10라운드 완주 시에만 발생 — 중도 종료는 기록을 남기지 않는다(6-2)
         public event System.Action<PlayRecord, IReadOnlyList<string>> Finished;
 
-        // 발판/영역: 0 L2 · 1 L1 · 2 C · 3 R1 · 4 R2
+        // 발판/영역: 0 L2 · 1 L1 · 2 C · 3 R1 · 4 R2 — 화면 x = 320·640·960·1280·1600 (판정 중심도 같은 비율)
         const int ZoneC = 2;
-        static readonly float[] ZoneCenters = { 0.15f, 0.325f, 0.5f, 0.675f, 0.85f };
+        static readonly float[] ZoneCenters = { 1f / 6f, 2f / 6f, 3f / 6f, 4f / 6f, 5f / 6f };
         static readonly string[] ZoneNames = { "L2", "L1", "C", "R1", "R2" };
         static readonly bool[] IsOuter = { true, false, false, false, true };
+        static float ZoneX(int zone) => ZoneCenters[zone] * 1920f;
 
         class StoreDef
         {
             public int Zone;
             public string Name;
             public string[] Pool;
+            public float W, H, Top;   // 점포 그림 크기·상단 (시안 MarketStalls)
         }
 
         static readonly StoreDef[] StoreDefs =
         {
-            new StoreDef { Zone = 0, Name = "방앗간", Pool = new[] { "쌀가루", "밀가루", "팥", "깨", "밤" } },
-            new StoreDef { Zone = 1, Name = "채소 가게", Pool = new[] { "호박", "시금치", "당근", "파", "버섯" } },
-            new StoreDef { Zone = 3, Name = "정육점", Pool = new[] { "소고기", "갈비", "달걀", "두부" } },
-            new StoreDef { Zone = 4, Name = "건어물·반찬", Pool = new[] { "미역", "김", "김치", "간장", "당면", "곶감" } },
+            new StoreDef { Zone = 0, Name = "방앗간", Pool = new[] { "쌀가루", "밀가루", "팥", "깨", "밤" }, W = 310, H = 390, Top = 338 },
+            new StoreDef { Zone = 1, Name = "채소 가게", Pool = new[] { "호박", "시금치", "당근", "파", "버섯" }, W = 301, H = 349, Top = 373 },
+            new StoreDef { Zone = 3, Name = "정육점", Pool = new[] { "소고기", "갈비", "달걀", "두부" }, W = 286, H = 365, Top = 351 },
+            new StoreDef { Zone = 4, Name = "건어물·반찬", Pool = new[] { "미역", "김", "김치", "간장", "당면", "곶감" }, W = 298, H = 382, Top = 343 },
         };
 
         static int TargetCount(int round) => round <= 2 ? 1 : round <= 7 ? 2 : 3;
@@ -61,11 +64,13 @@ namespace Shinmyeong.Games.Shopping
         {
             public StoreDef Def;
             public GameObject Go;
-            public Image Panel;
-            public bool HasArt;   // 점포 그림 적용 여부 — 점등 색 처리 분기용
-            public Text ItemText;
-            public Image ItemIcon;
+            public Image Frame;       // 상품 카드 틀 (점등 시 On 그림)
+            public Image Item;        // 재료 그림
+            public Text ItemText;     // 그림 없을 때 이름
+            public Image LabelBg;
+            public Text Label;
             public GameObject DoneBadge;
+            public RectTransform Light;
             public string Displayed;
             public bool Purchased;
         }
@@ -74,9 +79,10 @@ namespace Shinmyeong.Games.Shopping
         PlayHud _hud;
         Text _guideText;
         RectTransform _userMarker;
-        Image _basketPanel;
+        Image _basketImage;
         readonly Image[] _pads = new Image[5];
         readonly Dictionary<int, StoreView> _stores = new Dictionary<int, StoreView>();
+        RectTransform _chipsRoot;
 
         ArrivalJudge _judge;
         readonly Queue<int> _arrivals = new Queue<int>();
@@ -89,23 +95,13 @@ namespace Shinmyeong.Games.Shopping
         int _prevTargetPad = -1; // 외곽↔외곽 연속 금지는 라운드 경계를 넘어서도 적용
         int _lastMoveZone = -1;  // 좌우 이동 횟수 집계용 — 직전 도착 발판
 
-        static readonly Color PadNormal = new Color(0.35f, 0.38f, 0.4f);
-        static readonly Color PadLit = new Color(1f, 0.85f, 0.25f);
-        static readonly Color PadCReturn = new Color(0.35f, 0.75f, 0.95f);
-        static readonly Color StoreNormal = new Color(0.3f, 0.34f, 0.3f);
-        static readonly Color StoreLit = new Color(0.75f, 0.6f, 0.2f);
-
         public void Begin(RectTransform host)
         {
             End();
 
             var rootGo = new GameObject("ShoppingStage");
             rootGo.transform.SetParent(host, false);
-            var rect = rootGo.AddComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.sizeDelta = Vector2.zero;
-            _stageRoot = rect;
+            _stageRoot = UiKit.Stretch(rootGo);
 
             BuildStage();
 
@@ -173,84 +169,86 @@ namespace Shinmyeong.Games.Shopping
             }
             _judge.Tick(svc.BodyCenterX01, Time.time);
 
-            // 사용자 현재 위치 표시 (개발 판단 C6 제안: 발판 위 마커)
+            // 사용자 현재 위치 표시 (개발 판단 C6 제안: 발판 아래 작은 점)
             if (_userMarker != null)
-            {
-                _userMarker.anchorMin = _userMarker.anchorMax = new Vector2(svc.BodyCenterX01, 0.27f);
-                _userMarker.anchoredPosition = Vector2.zero;
-            }
+                _userMarker.anchoredPosition = new Vector2(svc.BodyCenterX01 * 1920f, -1050f);
         }
 
         void BuildStage()
         {
-            // 바닥면 — 발판이 서는 공간임을 나타낸다 (필수 · 발주서)
-            var floor = CreatePanel(_stageRoot, "Floor", new Color(0.3f, 0.27f, 0.22f));
-            SetAnchors(floor.rectTransform, new Vector2(0f, 0.05f), new Vector2(1f, 0.32f));
-
-            // 공통 HUD — 목표 패널(사야 할 것)·경과 시간·진행 레일 (2-5 확정) · 일시정지는 화면 쪽 상단 좌측(예외)
-            _hud = PlayHud.Create(_stageRoot);
-            _guideText = CreateText(_stageRoot, "Guide", new Vector2(0.5f, 0.66f), new Vector2(1000, 60), 34, "");
-
-            // 발판 5 + 점포 4 + 중앙 장바구니 (세로 1:1 정렬)
-            for (int i = 0; i < 5; i++)
-            {
-                var pad = CreatePanel(_stageRoot, $"Pad_{ZoneNames[i]}", PadNormal);
-                var padRect = pad.rectTransform;
-                padRect.anchorMin = padRect.anchorMax = new Vector2(ZoneCenters[i], 0.16f);
-                padRect.sizeDelta = new Vector2(220, 80);
-                _pads[i] = pad;
-
-                if (i == ZoneC)
-                {
-                    var basket = CreatePanel(_stageRoot, "Basket", new Color(0.5f, 0.36f, 0.2f));
-                    var basketRect = basket.rectTransform;
-                    basketRect.anchorMin = basketRect.anchorMax = new Vector2(ZoneCenters[i], 0.47f);
-                    basketRect.sizeDelta = new Vector2(190, 150);
-                    CreateText(basket.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(170, 60), 30, "장바구니");
-                    _basketPanel = basket;
-                }
-            }
-
+            // 점포 4 + 상품 카드 (세로 1:1 정렬) — 점등은 뒤의 빛 그림 + On 틀
             foreach (var def in StoreDefs)
             {
-                var store = CreatePanel(_stageRoot, $"Store_{def.Name}", StoreNormal);
-                var storeRect = store.rectTransform;
-                storeRect.anchorMin = storeRect.anchorMax = new Vector2(ZoneCenters[def.Zone], 0.47f);
-                storeRect.sizeDelta = new Vector2(200, 160);
-                CreateText(store.transform, "Name", new Vector2(0.5f, 0.82f), new Vector2(190, 40), 26, def.Name);
-                // 점포 안 큰 상품 카드 1개 (발주서: 복잡한 진열 없음)
-                var itemBox = CreatePanel(store.transform, "ItemBox", new Color(0.9f, 0.9f, 0.85f));
-                var itemRect = itemBox.rectTransform;
-                itemRect.anchorMin = itemRect.anchorMax = new Vector2(0.5f, 0.38f);
-                itemRect.sizeDelta = new Vector2(150, 80);
-                var itemText = CreateText(itemBox.transform, "Item", new Vector2(0.5f, 0.5f), new Vector2(140, 70), 30, "");
-                itemText.color = new Color(0.15f, 0.15f, 0.15f);
-                // 재료 그림 자리 — 진열이 라운드마다 바뀌므로 라운드 시작 시 적용 (Docs/92)
-                var itemIcon = CreatePanel(itemBox.transform, "Icon", Color.white);
-                SetAnchors(itemIcon.rectTransform, new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.94f));
-                itemIcon.preserveAspect = true;
-                itemIcon.gameObject.SetActive(false);
+                float cx = ZoneX(def.Zone);
+                var store = UiKit.Node(_stageRoot, $"Store_{def.Name}", cx - def.W * 0.5f, def.Top, def.W, def.H);
+                var stall = UiKit.ImgFit(store, "Stall", null, 0, 0, def.W, def.H);
+                if (!ArtCatalog.TryApply(stall, ArtCatalog.Store, def.Name))
+                {
+                    UiKit.Apply(stall, "Box-Round-23", sliced: true);
+                    stall.color = Skin.Hex("8d7b5a");
+                    UiKit.Txt(store, "Name", 0, 10, def.W, 40, def.Name, 26, 6, Color.white);
+                }
+                var light = UiKit.Img(_stageRoot, $"Light_{def.Name}", "SCR-013-Light", 0, 0, 621, 620).rectTransform;
+                light.pivot = new Vector2(0.5f, 0.5f);
+                light.anchoredPosition = new Vector2(cx, -565f);
+                light.gameObject.SetActive(false);
 
-                var badge = CreateText(store.transform, "Done", new Vector2(0.5f, 0.08f), new Vector2(150, 34), 24, "샀어요 ✓").gameObject;
-                badge.GetComponent<Text>().color = new Color(0.5f, 0.95f, 0.6f);
-                badge.SetActive(false);
+                // 상품 카드 188×202 (점포 위 · 시안 Products)
+                var card = UiKit.Node(_stageRoot, $"Product_{def.Name}", cx - 94, 464, 188, 202);
+                var frame = UiKit.Img(card, "Frame", "SCR-013-Food-Bg", -26, -25, 239, 239, Color.white, sliced: true);
+                var item = UiKit.ImgFit(card, "Food", null, 27, 22, 135, 135);
+                var itemText = UiKit.Txt(card, "ItemName", 10, 40, 168, 100, "", 30, 6, Skin.Brown);
+                var labelBg = UiKit.ImgFit(card, "LabelBackground", "SCR-013-Food-Name-Bg", 24, 163, 140, 48);
+                var label = UiKit.Txt(labelBg.transform, "Label", 0, 0, 140, 48, "", 23, 5, Color.white);
+                // 구매 완료 표시 (확정) — 카드 오른쪽 위 체크
+                var done = UiKit.Node(card, "Done", 140, -20, 55, 55);
+                UiKit.Img(done, "Circle", "Circle-55", 0, 0, 55, 55, Color.white);
+                UiKit.ImgFit(done, "Check", "Icon-Check", 8, 12, 39, 33, Skin.Green);
+                done.gameObject.SetActive(false);
 
                 _stores[def.Zone] = new StoreView
                 {
                     Def = def,
                     Go = store.gameObject,
-                    Panel = store,
-                    HasArt = ArtCatalog.TryApply(store, ArtCatalog.Store, def.Name),
+                    Frame = frame,
+                    Item = item,
                     ItemText = itemText,
-                    ItemIcon = itemIcon,
-                    DoneBadge = badge,
+                    LabelBg = labelBg,
+                    Label = label,
+                    DoneBadge = done.gameObject,
+                    Light = light,
                 };
+                card.SetParent(store, true); // 점포와 함께 켜고 끈다
+                light.SetAsFirstSibling();
+            }
+
+            // 중앙 장바구니
+            UiKit.ImgFit(_stageRoot, "BasketShadow", "Basket-Shadow", 840, 623, 243, 97);
+            _basketImage = UiKit.ImgFit(_stageRoot, "Basket", "Basket-02", 830, 472, 260, 263);
+
+            // 안내 문구 알약 (발판 위)
+            var guide = UiKit.Node(_stageRoot, "MovementGuide", 712, 755, 496, 54);
+            UiKit.Pill(guide, "Background", 0, 0, 496, 54, Skin.DimBrown);
+            _guideText = UiKit.Txt(guide, "Label", 0, 0, 496, 54, "", 23, 5, Skin.Cream);
+
+            // 발판 5 (입체 발판 그림 · 버튼 형태 아님)
+            for (int i = 0; i < 5; i++)
+            {
+                var pad = UiKit.ImgFit(_stageRoot, $"Pad_{ZoneNames[i]}", "SCR-013-FoodBoard", 0, 0, 319, 255);
+                pad.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                pad.rectTransform.anchoredPosition = new Vector2(ZoneX(i), -953f);
+                _pads[i] = pad;
             }
 
             // 사용자 위치 마커
-            var marker = CreatePanel(_stageRoot, "UserMarker", new Color(0.3f, 0.85f, 1f));
+            var marker = UiKit.Img(_stageRoot, "UserMarker", "Circle-52", 0, 0, 30, 30, Skin.Blue);
+            marker.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             _userMarker = marker.rectTransform;
-            _userMarker.sizeDelta = new Vector2(46, 46);
+
+            // 공통 HUD — 목표 칩 3개는 GoalRoot에 직접 그린다 · 경과 시간 · 진행 레일 (2-5 확정)
+            _hud = PlayHud.Create(_stageRoot);
+            _hud.UseCustomGoal();
+            _chipsRoot = UiKit.Group(_hud.GoalRoot, "TargetChips");
         }
 
         IEnumerator GameLoop()
@@ -261,8 +259,8 @@ namespace Shinmyeong.Games.Shopping
             Debug.Log("[Shopping] ===== 10라운드 종료 =====\n" + string.Join("\n", _records));
             _play.DurationSec = Time.time - _startTime; // timeScale=0 정지로 일시정지 시간은 이미 제외됨
             _play.PausedSec = GamePause.AccumulatedSec;
-            _hud.SetGoal("장보기를 마쳤어요");
-            _guideText.text = "";
+            ClearChips();
+            _guideText.text = "장보기를 마쳤어요";
             yield return new WaitForSeconds(1.2f);
             Finished?.Invoke(_play, _records);
         }
@@ -277,19 +275,14 @@ namespace Shinmyeong.Games.Shopping
 
             // 3발판 구간: 바깥 발판·점포는 비활성이 아니라 아예 미표시 (확정)
             for (int i = 0; i < 5; i++)
-            {
-                bool visible = wide || !IsOuter[i];
-                _pads[i].gameObject.SetActive(visible);
-                _pads[i].color = PadNormal;
-            }
+                _pads[i].gameObject.SetActive(wide || !IsOuter[i]);
             foreach (var kv in _stores)
             {
-                bool visible = activeStoreZones.Contains(kv.Key);
-                kv.Value.Go.SetActive(visible);
-                kv.Value.Panel.color = kv.Value.HasArt ? Color.white : StoreNormal;
+                kv.Value.Go.SetActive(activeStoreZones.Contains(kv.Key));
                 kv.Value.Purchased = false;
                 kv.Value.DoneBadge.SetActive(false);
             }
+            SetLights(-1, false, false);
 
             // 진열: 각 점포에 취급 재료 중 1종 · 한 판 같은 재료 3회 이하
             foreach (int zone in activeStoreZones)
@@ -302,9 +295,10 @@ namespace Shinmyeong.Games.Shopping
                 if (candidates.Count == 0)
                     candidates.AddRange(store.Def.Pool);
                 store.Displayed = candidates[_rng.Next(candidates.Count)];
-                bool itemArt = ArtCatalog.TryApply(store.ItemIcon, ArtCatalog.Ingredient, store.Displayed);
-                store.ItemIcon.gameObject.SetActive(itemArt);
+                bool itemArt = ArtCatalog.TryApply(store.Item, ArtCatalog.Ingredient, store.Displayed);
+                store.Item.gameObject.SetActive(itemArt);
                 store.ItemText.text = itemArt ? "" : store.Displayed;
+                store.Label.text = store.Displayed;
                 // 한 판 같은 재료 3회 이하는 「진열」 기준 (04 구성표 진열 규칙 #3)
                 _itemUseCount[store.Displayed] = _itemUseCount.TryGetValue(store.Displayed, out var used) ? used + 1 : 1;
             }
@@ -344,7 +338,7 @@ namespace Shinmyeong.Games.Shopping
                 int targetZone = targets[ti];
                 string targetItem = _stores[targetZone].Displayed;
 
-                UpdateTargetList(targets, boughtList, ti);
+                UpdateTargetChips(targets, boughtList, ti);
                 SetLights(targetZone, storeLit: true, padCReturn: false);
                 _guideText.text = "빛나는 발판으로 이동하세요"; // 8-6-1 확정 문구
 
@@ -423,19 +417,31 @@ namespace Shinmyeong.Games.Shopping
                     yield return null;
                 }
 
-                // 담기 연출 (자리)
-                _basketPanel.color = new Color(1f, 0.8f, 0.35f);
-                yield return new WaitForSeconds(0.25f);
-                _basketPanel.color = new Color(0.5f, 0.36f, 0.2f);
+                // 담기 연출 — 장바구니가 살짝 커졌다 돌아온다
+                yield return BasketPop();
                 SetLights(-1, false, false);
             }
 
-            UpdateTargetList(targets, boughtList, targetCount);
+            UpdateTargetChips(targets, boughtList, targetCount);
             _play.ShoppingRoundSecs.Add(Time.time - roundStart);
             if (roundAllCorrect)
                 _play.SuccessCount++; // 모든 목표를 그대로 구매한 라운드 (9-1 확정값으로 재검토)
             _guideText.text = "";
             yield return new WaitForSeconds(0.8f);
+        }
+
+        IEnumerator BasketPop()
+        {
+            var rect = _basketImage.rectTransform;
+            float t = 0f;
+            while (t < 0.3f)
+            {
+                t += Time.deltaTime;
+                float s = 1f + 0.12f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t / 0.3f));
+                rect.localScale = Vector3.one * s;
+                yield return null;
+            }
+            rect.localScale = Vector3.one;
         }
 
         void SetLights(int targetZone, bool storeLit, bool padCReturn)
@@ -444,29 +450,59 @@ namespace Shinmyeong.Games.Shopping
             {
                 if (!_pads[i].gameObject.activeSelf)
                     continue;
-                _pads[i].color = i == targetZone && storeLit ? PadLit
-                    : i == ZoneC && padCReturn ? PadCReturn
-                    : PadNormal;
+                bool lit = (i == targetZone && storeLit) || (i == ZoneC && padCReturn);
+                UiKit.Apply(_pads[i], lit ? "SCR-013-FoodBoard-On" : "SCR-013-FoodBoard");
+                _pads[i].preserveAspect = true;
             }
             foreach (var kv in _stores)
-                if (kv.Value.Go.activeSelf)
-                    kv.Value.Panel.color = kv.Key == targetZone && storeLit ? StoreLit
-                        : kv.Value.HasArt ? Color.white : StoreNormal; // 그림 점포는 흰색이 기본(무착색), 점등은 틴트
+            {
+                bool lit = kv.Key == targetZone && storeLit;
+                var store = kv.Value;
+                store.Light.gameObject.SetActive(lit && store.Go.activeSelf);
+                UiKit.Apply(store.Frame, lit ? "SCR-013-Food-Bg-On" : "SCR-013-Food-Bg", sliced: !lit);
+                UiKit.Apply(store.LabelBg, lit ? "SCR-013-Food-Name-Bg_On" : "SCR-013-Food-Name-Bg");
+                store.LabelBg.preserveAspect = true;
+            }
         }
 
-        void UpdateTargetList(List<int> targets, List<(string item, bool correct)> bought, int currentIndex)
+        /// 목표 칩 3개 (시안 헤더): 산 것 = 초록 채움 + 체크 · 지금 = 흰 칸 + 재료 그림 · 다음 = 흐리게
+        void UpdateTargetChips(List<int> targets, List<(string item, bool correct)> bought, int currentIndex)
         {
-            var parts = new List<string>();
-            for (int i = 0; i < targets.Count; i++)
+            ClearChips();
+            int n = targets.Count;
+            float total = n * 353 + (n - 1) * 11;
+            float start = (1184 - total) * 0.5f;
+            for (int i = 0; i < n; i++)
             {
+                string item = i < bought.Count ? bought[i].item : _stores[targets[i]].Displayed;
+                var chip = UiKit.Node(_chipsRoot, $"Chip{i + 1}", start + i * 364, 42, 353, 98);
                 if (i < bought.Count)
-                    parts.Add($"<color=#7ee787>{bought[i].item} ✓</color>");
-                else if (i == currentIndex)
-                    parts.Add($"<color=#ffd75e>[{_stores[targets[i]].Displayed}]</color>");
-                else
-                    parts.Add($"<color=#888888>{_stores[targets[i]].Displayed}</color>");
+                {
+                    UiKit.Img(chip, "Face", "Box-Round-15", 0, 0, 353, 98, Skin.Green, sliced: true);
+                    UiKit.Img(chip, "Circle", "Circle-55", 26, 21, 55, 55, Color.white);
+                    UiKit.ImgFit(chip, "Check", "Icon-Check", 34, 25, 43, 39, Skin.Green);
+                    UiKit.Txt(chip, "Label", 135, 0, 210, 98, item, 40, 6, Color.white);
+                    continue;
+                }
+                bool current = i == currentIndex;
+                UiKit.Img(chip, "Face", "Box-Round-15", 0, 0, 353, 98, Skin.Face, sliced: true);
+                if (current)
+                    UiKit.Img(chip, "Outline", "Box-Round-15-Outline", 0, 0, 353, 98, Skin.Green, sliced: true);
+                var art = ArtCatalog.Get(ArtCatalog.Ingredient, item);
+                if (art != null)
+                {
+                    var food = UiKit.ImgFit(chip, "Food", null, current ? 4 : 30, current ? 0 : 8, current ? 140 : 83, current ? 98 : 83,
+                        current ? Color.white : new Color(1f, 1f, 1f, 0.35f));
+                    food.sprite = art;
+                }
+                UiKit.Txt(chip, "Label", 135, 0, 210, 98, item, 40, 6, current ? Skin.BrownDark : Skin.Outline2);
             }
-            _hud.SetGoal("사야 할 것 :  " + string.Join("   ", parts));
+        }
+
+        void ClearChips()
+        {
+            for (int i = _chipsRoot.childCount - 1; i >= 0; i--)
+                Destroy(_chipsRoot.GetChild(i).gameObject);
         }
 
         /// 유의미한 몸 이동은 유효 행동으로 힌트 타이머를 리셋한다 (C4 기준안).
@@ -498,47 +534,10 @@ namespace Shinmyeong.Games.Shopping
         {
             string prev = _guideText.text;
             _guideText.text = message;
-            _guideText.color = new Color(1f, 0.85f, 0.3f);
+            _guideText.color = Skin.Gold;
             yield return new WaitForSeconds(1.5f);
-            _guideText.color = Color.white;
+            _guideText.color = Skin.Cream;
             _guideText.text = prev;
-        }
-
-        // ---- UI 헬퍼 ----
-
-        Image CreatePanel(Transform parent, string name, Color color)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var img = go.AddComponent<Image>();
-            img.color = color;
-            img.raycastTarget = false;
-            return img;
-        }
-
-        static void SetAnchors(RectTransform rect, Vector2 min, Vector2 max)
-        {
-            rect.anchorMin = min;
-            rect.anchorMax = max;
-            rect.sizeDelta = Vector2.zero;
-        }
-
-        Text CreateText(Transform parent, string name, Vector2 anchor, Vector2 size, int fontSize, string content)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var text = go.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.supportRichText = true;
-            text.text = content;
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.sizeDelta = size;
-            return text;
         }
     }
 }

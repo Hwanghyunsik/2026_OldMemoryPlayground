@@ -2,13 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Flow;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Harvest
 {
-    /// 수확하기 정식 게임 루프 (그래픽은 X-Box 플레이스홀더 — 자산 도입 시 교체).
+    /// 수확하기 정식 게임 루프 (무대 그림은 시안 SCR-008: 넝쿨·나무에 매달린 작물 + 바구니).
     /// 04 게임구성표 라운드 규칙 그대로: R1~3 3지(벌레0) · R4~7 4지(벌레1) · R8~10 5지(벌레1)
     ///   · 목표 작물은 한 판 안에서 같은 작물 2회 이하(확정).
     /// 힌트(3-2 확정): 10초 무수확 시 목표 재강조 반복 — 다른 작물 수확 = 라운드 종료라 타이머
@@ -20,6 +21,15 @@ namespace Shinmyeong.Games.Harvest
         [SerializeField] float _hintIntervalSeconds = 10f;
 
         static readonly string[] CropNames = { "호박", "오이", "가지", "토마토", "고추", "대추", "감", "밤" };
+        // 넝쿨·나무 그림 4종을 자리마다 번갈아 건다 (폭 · 시안 HarvestPlants)
+        static readonly (string sprite, float w, float h)[] Plants =
+        {
+            ("SCR-008-Tree-01", 265, 567), ("SCR-008-Vine-01", 147, 570),
+            ("SCR-008-Tree-02", 262, 563), ("SCR-008-Vine-02", 174, 575),
+        };
+        const float SlotLeft = 570f, SlotRight = 1330f;   // 작물 자리 중심 x 범위 (시안 4자리 기준)
+        const float CropTop = 390f, CropW = 200f, CropH = 240f;
+        static readonly Vector2 BasketCenter = new Vector2(960f, 900f);
 
         enum Kind { Target, Decoy, Bug }
 
@@ -30,6 +40,7 @@ namespace Shinmyeong.Games.Harvest
             public GameObject Go;
             public RectTransform Rect;
             public Image Image;
+            public Vector2 Center;
         }
 
         /// 10라운드 완주 시에만 발생 — 중도 종료는 기록을 남기지 않는다(6-2)
@@ -38,10 +49,11 @@ namespace Shinmyeong.Games.Harvest
         PlayRecord _play;
         float _startTime;
         RectTransform _stageRoot;
+        RectTransform _plantsRoot;
+        RectTransform _cropsRoot;
         PlayHud _hud;
-        RectTransform _basket;
         Image _basketImage;
-        GameObject _arrow;
+        RectTransform _glow;
         readonly List<Crop> _crops = new List<Crop>();
         readonly List<string> _records = new List<string>();
         readonly Dictionary<string, int> _targetUseCount = new Dictionary<string, int>(); // 같은 작물 한 판 2회 이하 (확정)
@@ -55,11 +67,7 @@ namespace Shinmyeong.Games.Harvest
 
             var rootGo = new GameObject("HarvestStage");
             rootGo.transform.SetParent(host, false);
-            var rect = rootGo.AddComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.sizeDelta = Vector2.zero;
-            _stageRoot = rect;
+            _stageRoot = UiKit.Stretch(rootGo);
 
             BuildStage();
 
@@ -100,18 +108,18 @@ namespace Shinmyeong.Games.Harvest
 
         void BuildStage()
         {
+            _plantsRoot = UiKit.Group(_stageRoot, "HarvestPlants");
+            // 목표 강조 빛 (작물 뒤)
+            _glow = UiKit.Img(_stageRoot, "TargetGlow", "SCR-013-Light", 0, 0, 420, 420).rectTransform;
+            _glow.pivot = new Vector2(0.5f, 0.5f);
+            _glow.gameObject.SetActive(false);
+            _cropsRoot = UiKit.Group(_stageRoot, "HarvestMaterials");
+
+            // 바구니 (하단 중앙 · 시안 HarvestBasket)
+            UiKit.Img(_stageRoot, "BasketShadow", "Circle-125", 788, 964, 329, 70, Skin.Hex("402108", 0.3f));
+            _basketImage = UiKit.ImgFit(_stageRoot, "Basket", "Basket", 784, 769, 353, 260);
+
             _hud = PlayHud.Create(_stageRoot); // 공통 HUD — 목표 패널·경과 시간·진행 레일 (2-5 확정)
-
-            // 하단 중앙은 일시정지 버튼 자리(2-4 확정) — 바구니는 우측으로 (임시 배치 · 자산 적용 시 정리)
-            var basketGo = CreateImage(_stageRoot, "Basket", new Vector2(0.74f, 0.16f), new Vector2(240, 130),
-                new Color(0.55f, 0.38f, 0.2f), false);
-            _basket = basketGo.GetComponent<RectTransform>();
-            _basketImage = basketGo.GetComponent<Image>();
-            CreateText(basketGo.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(200, 60), 32, "바구니");
-
-            _arrow = CreateText(_stageRoot, "TargetArrow", new Vector2(0.5f, 0.5f), new Vector2(80, 80), 60, "▼").gameObject;
-            _arrow.GetComponent<Text>().color = new Color(1f, 0.85f, 0.1f);
-            _arrow.SetActive(false);
         }
 
         IEnumerator GameLoop()
@@ -153,17 +161,18 @@ namespace Shinmyeong.Games.Harvest
                 kinds.Add(Kind.Decoy);
             Shuffle(kinds);
 
+            BuildPlants(count);
             int decoyIdx = 0;
             for (int i = 0; i < count; i++)
             {
                 var kind = kinds[i];
                 string name = kind == Kind.Decoy ? decoyPool[decoyIdx++] : targetName;
-                _crops.Add(CreateCrop(kind, name, new Vector2(SlotX(count, i), 0.68f)));
+                _crops.Add(CreateCrop(kind, name, SlotX(count, i)));
             }
 
-            // 라운드 표시는 HUD 진행 레일 하나뿐(중복 배치 금지) · 안내는 8-6-1 확정 문구 + 목표 데이터
+            // 라운드 표시는 HUD 진행 레일 하나뿐(중복 배치 금지) · 안내는 8-6-1 확정 문구 + 목표 그림
             _hud.SetRound(round);
-            _hud.SetGoal($"「{targetName}」 손을 대고 아래로 당겨 주세요");
+            _hud.SetGoal($"「{targetName}」 손을 대고 아래로 당겨 주세요", ArtCatalog.Get(ArtCatalog.CropHanging, targetName));
             if (PullJudge.Instance != null)
                 PullJudge.Instance.JudgingEnabled = false;
 
@@ -223,59 +232,82 @@ namespace Shinmyeong.Games.Harvest
 
         static float SlotX(int count, int index)
         {
-            const float left = 0.28f, right = 0.72f;
             if (count == 1)
-                return 0.5f;
-            return Mathf.Lerp(left, right, index / (float)(count - 1));
+                return 960f;
+            return Mathf.Lerp(SlotLeft, SlotRight, index / (float)(count - 1));
         }
 
-        Crop CreateCrop(Kind kind, string name, Vector2 anchor)
+        /// 자리 수만큼 넝쿨·나무를 건다 (3·4·5개 어느 배치에서도 작물 크기는 같다 · 발주서 02)
+        void BuildPlants(int count)
         {
-            // 벌레 먹은 것만 상시 식별 표식(어두운 색+표기) · 다른 작물은 목표와 같은 표현
-            var color = kind == Kind.Bug ? new Color(0.45f, 0.35f, 0.2f) : new Color(0.4f, 0.7f, 0.35f);
-            var go = CreateImage(_stageRoot, $"Crop_{name}_{kind}", anchor, new Vector2(160, 160), color, true);
-            // 자산이 있으면 매달린/벌레 그림으로 교체, 없으면 색+라벨 플레이스홀더 (Docs/92)
-            bool hasArt = ArtCatalog.TryApply(go.GetComponent<Image>(),
-                kind == Kind.Bug ? ArtCatalog.CropBug : ArtCatalog.CropHanging, name);
+            for (int i = _plantsRoot.childCount - 1; i >= 0; i--)
+                Destroy(_plantsRoot.GetChild(i).gameObject);
+            for (int i = 0; i < count; i++)
+            {
+                var (sprite, w, h) = Plants[i % Plants.Length];
+                UiKit.ImgFit(_plantsRoot, $"Plant{i + 1}", sprite, SlotX(count, i) - w * 0.5f, 246, w, h);
+            }
+        }
+
+        Crop CreateCrop(Kind kind, string name, float centerX)
+        {
+            var go = new GameObject($"Crop_{name}_{kind}");
+            go.transform.SetParent(_cropsRoot, false);
+            var img = go.AddComponent<Image>();
+            img.raycastTarget = false;
+            img.preserveAspect = true;
+            var rect = UiKit.PlaceCentered(go.GetComponent<RectTransform>(), centerX - CropW * 0.5f, CropTop, CropW, CropH);
+
+            // 자산이 있으면 매달린/벌레 그림, 없으면 색+라벨 플레이스홀더 (Docs/92).
+            // 벌레 그림이 없는 작물은 성한 그림 + 벌레 아이콘 병기(상시 식별 표식 · 강조 없이 구분)
+            bool hasArt = ArtCatalog.TryApply(img, kind == Kind.Bug ? ArtCatalog.CropBug : ArtCatalog.CropHanging, name);
+            bool bugFallback = false;
+            if (!hasArt && kind == Kind.Bug)
+                bugFallback = hasArt = ArtCatalog.TryApply(img, ArtCatalog.CropHanging, name);
             if (!hasArt)
-                CreateText(go.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(150, 60), 30,
-                    kind == Kind.Bug ? $"{name}\n(벌레)" : name);
+            {
+                UiKit.Apply(img, "Box-Round-23", sliced: true);
+                img.color = kind == Kind.Bug ? Skin.Hex("8a6a3a") : Skin.Hex("6fae5a");
+                UiKit.Txt(go.transform, "Label", 0, 0, CropW, CropH, kind == Kind.Bug ? $"{name}\n(벌레)" : name, 30, 6, Color.white);
+            }
+            if (bugFallback)
+                UiKit.ImgFit(go.transform, "Bug", "Bug", CropW - 70, CropH - 80, 60, 60);
+
             go.AddComponent<PullTarget>();
             return new Crop
             {
                 Kind = kind,
                 Name = name,
                 Go = go,
-                Rect = go.GetComponent<RectTransform>(),
-                Image = go.GetComponent<Image>(),
+                Rect = rect,
+                Image = img,
+                Center = new Vector2(centerX, CropTop + CropH * 0.5f),
             };
         }
 
         IEnumerator Highlight(Crop target)
         {
-            var arrowRect = _arrow.GetComponent<RectTransform>();
-            arrowRect.anchorMin = arrowRect.anchorMax = target.Rect.anchorMin + new Vector2(0f, 0.12f);
-            arrowRect.anchoredPosition = Vector2.zero;
-            _arrow.SetActive(true);
-            var baseColor = target.Image.color;
+            _glow.anchoredPosition = new Vector2(target.Center.x, -target.Center.y);
+            _glow.gameObject.SetActive(true);
+            _glow.SetAsFirstSibling();
+            _plantsRoot.SetAsFirstSibling();
             float t = 0f;
             while (t < _highlightSeconds)
             {
                 t += Time.deltaTime;
                 float pulse = 0.5f + 0.5f * Mathf.Sin(t * 12f);
-                target.Image.color = Color.Lerp(baseColor, new Color(1f, 0.95f, 0.4f), pulse * 0.7f);
-                target.Rect.localScale = Vector3.one * (1f + 0.08f * pulse);
+                target.Rect.localScale = Vector3.one * (1f + 0.1f * pulse);
+                _glow.localScale = Vector3.one * (0.9f + 0.2f * pulse);
                 yield return null;
             }
-            target.Image.color = baseColor;
             target.Rect.localScale = Vector3.one;
-            _arrow.SetActive(false);
+            _glow.gameObject.SetActive(false);
         }
 
         IEnumerator ArcIntoBasket(Crop crop)
         {
-            var from = crop.Rect.anchorMin;
-            var to = _basket.anchorMin + new Vector2(0f, 0.04f);
+            var from = crop.Center;
+            var to = BasketCenter + new Vector2(0f, -30f);
             float t = 0f;
             const float duration = 0.7f;
             while (t < duration)
@@ -283,34 +315,32 @@ namespace Shinmyeong.Games.Harvest
                 t += Time.deltaTime;
                 float u = Mathf.Clamp01(t / duration);
                 var pos = Vector2.Lerp(from, to, u);
-                pos.y += 0.12f * Mathf.Sin(Mathf.PI * u); // 포물선
-                crop.Rect.anchorMin = crop.Rect.anchorMax = pos;
-                crop.Rect.anchoredPosition = Vector2.zero;
+                pos.y -= 130f * Mathf.Sin(Mathf.PI * u); // 포물선 (위로 떴다가 내려온다)
+                crop.Rect.anchoredPosition = new Vector2(pos.x, -pos.y);
                 crop.Rect.localScale = Vector3.one * Mathf.Lerp(1f, 0.5f, u);
                 yield return null;
             }
             Destroy(crop.Go);
             // 바구니 반짝임
-            var baseColor = _basketImage.color;
-            _basketImage.color = new Color(1f, 0.85f, 0.3f);
+            _basketImage.color = new Color(1f, 0.9f, 0.6f);
             yield return new WaitForSeconds(0.15f);
-            _basketImage.color = baseColor;
+            _basketImage.color = Color.white;
         }
 
         IEnumerator FlyOff(Crop crop)
         {
             // 상단 대각선으로 회전하며 퇴장 — 사용자 방향(아래)으로 날아오지 않는다
-            var from = crop.Rect.anchorMin;
-            float dir = from.x < 0.5f ? -1f : 1f;
-            var to = from + new Vector2(dir * 0.35f, 0.6f);
+            var from = crop.Center;
+            float dir = from.x < 960f ? -1f : 1f;
+            var to = from + new Vector2(dir * 650f, -700f);
             float t = 0f;
             const float duration = 0.6f;
             while (t < duration)
             {
                 t += Time.deltaTime;
                 float u = Mathf.Clamp01(t / duration);
-                crop.Rect.anchorMin = crop.Rect.anchorMax = Vector2.Lerp(from, to, u);
-                crop.Rect.anchoredPosition = Vector2.zero;
+                var pos = Vector2.Lerp(from, to, u);
+                crop.Rect.anchoredPosition = new Vector2(pos.x, -pos.y);
                 crop.Rect.localRotation = Quaternion.Euler(0, 0, dir * -540f * u);
                 yield return null;
             }
@@ -324,42 +354,6 @@ namespace Shinmyeong.Games.Harvest
                 int j = _rng.Next(i + 1);
                 (list[i], list[j]) = (list[j], list[i]);
             }
-        }
-
-        GameObject CreateImage(Transform parent, string name, Vector2 anchor, Vector2 size, Color color, bool round)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var img = go.AddComponent<Image>();
-            img.color = color;
-            img.raycastTarget = false;
-            if (round)
-            {
-#if UNITY_EDITOR
-                img.sprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
-#endif
-            }
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.sizeDelta = size;
-            return go;
-        }
-
-        Text CreateText(Transform parent, string name, Vector2 anchor, Vector2 size, int fontSize, string content)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var text = go.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.text = content;
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.sizeDelta = size;
-            return text;
         }
     }
 }

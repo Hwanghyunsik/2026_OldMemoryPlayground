@@ -1,0 +1,373 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5120a63c3d805814fb2eafa703502697, type: 3}
+  m_Name: UiCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.UI.UiCatalog
+  Sprites:
+  - Name: Avatar_01
+    Sprite: {fileID: 2454578995973476345, guid: cfae7270948b0314fbcb792788284382, type: 3}
+  - Name: Avatar_02
+    Sprite: {fileID: -5295932404433457827, guid: 9345faa1d9218db4eb3c63925c837255, type: 3}
+  - Name: Avatar_03
+    Sprite: {fileID: 5727706842663484999, guid: 4f0fc2bc3a83b7a45bbd510765e4a6e0, type: 3}
+  - Name: Avatar_04
+    Sprite: {fileID: 9160428920284247771, guid: ce41e5c24d7c90d43a48662dcdfe06d7, type: 3}
+  - Name: Avatar_05
+    Sprite: {fileID: 8452946419027002204, guid: b6321f8123180e8479495d87571206c0, type: 3}
+  - Name: Avatar_06
+    Sprite: {fileID: 1960945733412494765, guid: 662cd64fc3c8c424595266c68131b9eb, type: 3}
+  - Name: Avatar_07
+    Sprite: {fileID: -8564351798091872504, guid: 87025dc4aa4fd624d9cf5429298283dc, type: 3}
+  - Name: Avatar_08
+    Sprite: {fileID: -5663161408930855701, guid: bd703328f697b47479d1a8caf9db672b, type: 3}
+  - Name: Basket
+    Sprite: {fileID: 8768041848901560463, guid: 2880325e46ce0da4b8a8dce6c91a0f9d, type: 3}
+  - Name: Basket-02
+    Sprite: {fileID: -6876807544678515270, guid: 6dd2805061c0b784f87c229e15f0b6c9, type: 3}
+  - Name: Basket-Shadow
+    Sprite: {fileID: -5714181786965750452, guid: 981a86f722e456446ad066ea390e48d8, type: 3}
+  - Name: Box-Round-10
+    Sprite: {fileID: -5017216902199096497, guid: 1a6a40ff1351cc346abc659b0c7e43dc, type: 3}
+  - Name: Box-Round-15
+    Sprite: {fileID: 2867932152527144085, guid: 53ddea607b5ad2646824d87fac61b47e, type: 3}
+  - Name: Box-Round-15-Outline
+    Sprite: {fileID: -1703774472455688628, guid: 656ca428690c72942955f09a5533e541, type: 3}
+  - Name: Box-Round-20
+    Sprite: {fileID: -160477236349882604, guid: e07f102fef7b2a044b1b8f3056a50790, type: 3}
+  - Name: Box-Round-20-Outline
+    Sprite: {fileID: 5968109457143937767, guid: 9f36935fcca29894f99a1b594c190d66, type: 3}
+  - Name: Box-Round-23
+    Sprite: {fileID: 4005916317483533729, guid: abb32b9b00c9ba443963a60bca9841bd, type: 3}
+  - Name: Box-Round-23-Outline
+    Sprite: {fileID: -2706539759797014089, guid: 9541683eafb5b0e448f6dcf78d3bc9b4, type: 3}
+  - Name: Box-Round-23-Outline-8
+    Sprite: {fileID: 5510329783919576917, guid: 0c336bb47801b574ca9a7262b906936c, type: 3}
+  - Name: Box-Round-28
+    Sprite: {fileID: 7398832704033301307, guid: 698bcad9fd2ee824286c2d5f18f433d8, type: 3}
+  - Name: Box-Round-30
+    Sprite: {fileID: -1345470374036826223, guid: 313ede3488694594db88937fd0ffa892, type: 3}
+  - Name: Box-Round-34
+    Sprite: {fileID: -1127912422812753162, guid: 20c4f68bb21afd248b405d2e850251c6, type: 3}
+  - Name: Box-Round-38
+    Sprite: {fileID: 700861596571789078, guid: 02ad08e3cdf51f94eb860d821df0d5cc, type: 3}
+  - Name: Box-Round-5
+    Sprite: {fileID: 9207605336983960371, guid: 0dc183bb5e0682a4ab16381ebdd398be, type: 3}
+  - Name: Box-Round-Select
+    Sprite: {fileID: 21300000, guid: 7cc9c27ebea5242449e56edcaf30884e, type: 3}
+  - Name: Box-Trans-Round-25
+    Sprite: {fileID: -2159110003946577440, guid: d8c248021bebeac41bec25ada4292ba3, type: 3}
+  - Name: Bt-Round-Green
+    Sprite: {fileID: -7290195165503449721, guid: ce15aef404229d64888c6c67aa6b2717, type: 3}
+  - Name: Bt-Round-Green-02
+    Sprite: {fileID: -366727298629442524, guid: be10fad6c62ed5940b6bae294f58da36, type: 3}
+  - Name: Bt-Round-Green-03
+    Sprite: {fileID: 21300000, guid: c4a59de061d8f3b4a96a18629cb5643f, type: 3}
+  - Name: Bt-Round-Ivory
+    Sprite: {fileID: 6636850237906639433, guid: c11b1ab7c5a8d2040999b830658d490b, type: 3}
+  - Name: Bt-Round-Ivory-02
+    Sprite: {fileID: 21300000, guid: a4260aab247497845907f76db23412d3, type: 3}
+  - Name: Bug
+    Sprite: {fileID: 6710978388883721089, guid: 5c15304522cc54143a45bac84c2a20f7, type: 3}
+  - Name: Circle-125
+    Sprite: {fileID: 21300000, guid: 4f31ad6f9ccea13479fe79266c5d18ad, type: 3}
+  - Name: Circle-125-Outline
+    Sprite: {fileID: 21300000, guid: 0d94540fcda1c154bb1c332e72e99b51, type: 3}
+  - Name: Circle-25
+    Sprite: {fileID: -5205123817135891992, guid: c25a4fa88b793a14b966a9f6ed567a34, type: 3}
+  - Name: Circle-52
+    Sprite: {fileID: -7968690394818186450, guid: 9c72c51028c74ee4e977f4f049979f14, type: 3}
+  - Name: Circle-55
+    Sprite: {fileID: -3514257404799284932, guid: 74c87c022d4b14f45bd86771644f4acf, type: 3}
+  - Name: Circle-outline
+    Sprite: {fileID: -2887440846328053842, guid: e79d254a016df2c4997a39b742c76464, type: 3}
+  - Name: Circle-outline-15
+    Sprite: {fileID: 538084230788645488, guid: 0f0ed56151c87a144ae5ac6acafa5e07, type: 3}
+  - Name: Dot-Line-1.5
+    Sprite: {fileID: 21300000, guid: e522b16162d574e4f9ef45ab94131dd7, type: 3}
+  - Name: Dot-Line-2
+    Sprite: {fileID: 21300000, guid: 0591f3224f40a5f49a44ffa83f30cf18, type: 3}
+  - Name: Dot-Line-3
+    Sprite: {fileID: 21300000, guid: 96e9faf6ae9285c47b8499e8a591b04f, type: 3}
+  - Name: Dot-Line-3-02
+    Sprite: {fileID: 21300000, guid: 5e5eb9fab4deea24bb99f660712cf5a2, type: 3}
+  - Name: Dot-Line-4
+    Sprite: {fileID: 21300000, guid: a7ed673c79cc5ec46bd61c7dd7ce5d96, type: 3}
+  - Name: Dot-Line-Circle
+    Sprite: {fileID: 21300000, guid: 92271808ea93d6142abec25aceffdf58, type: 3}
+  - Name: Dot-Line-Wide
+    Sprite: {fileID: 21300000, guid: 32962355110750e4dac67996f91ed61e, type: 3}
+  - Name: Icon-Arrow
+    Sprite: {fileID: -3747088282780748025, guid: 76b0a176563582b4bbdb4bfc1b0a5285, type: 3}
+  - Name: Icon-Arrow-02
+    Sprite: {fileID: 6446782531108845986, guid: b394c90bcc83163449bea8ef95b985c8, type: 3}
+  - Name: Icon-Check
+    Sprite: {fileID: -6282801789656902664, guid: bdf0c904a68b88b4e97684ae6568af9a, type: 3}
+  - Name: Icon-Check-02
+    Sprite: {fileID: 2999848759110778099, guid: 5dafdee2a996bcc419748d869af8ee33, type: 3}
+  - Name: Icon-Cooking
+    Sprite: {fileID: -8775858478545433122, guid: 684f26b4e0b423b499456e7ec8e6ef24, type: 3}
+  - Name: Icon-Cooking-Text
+    Sprite: {fileID: 3443901764115242016, guid: 58ed8e1c4fca4ee4e8be732c932019d4, type: 3}
+  - Name: Icon-Exit
+    Sprite: {fileID: 21300000, guid: a7dd2b8ad44cd644f9f5467039a3888b, type: 3}
+  - Name: Icon-GranMa
+    Sprite: {fileID: 7889950704335587138, guid: 88289e1438450154fb5bdd1cb9ae41f4, type: 3}
+  - Name: Icon-GranMa-02
+    Sprite: {fileID: 3740912626552171760, guid: 88c78b63313e8da4ba2ae872bc67e5a5, type: 3}
+  - Name: Icon-Harvest
+    Sprite: {fileID: 368862175656942170, guid: dddd686f3763d07448ba2065552616a5, type: 3}
+  - Name: Icon-Harvest-Text
+    Sprite: {fileID: -5145684131148896223, guid: 6bb90d9f27dff014a82a43ed08c34d23, type: 3}
+  - Name: Icon-Home
+    Sprite: {fileID: 1055249208843227398, guid: c34280ef7892f984da0535483cad881d, type: 3}
+  - Name: Icon-Leaf
+    Sprite: {fileID: -7896670240490161457, guid: bacef6e9a15a9ec40906dc7dcc4c79af, type: 3}
+  - Name: Icon-Menu
+    Sprite: {fileID: 5801748993348062788, guid: d0bd44a1f76877945abd62057f1a9a66, type: 3}
+  - Name: Icon-Next
+    Sprite: {fileID: -8625627232402229231, guid: e19be95d923e2d240b3d0470d969cd9b, type: 3}
+  - Name: Icon-Pause
+    Sprite: {fileID: -1227894614, guid: 434cf42e9c63cb948b8f949ee45d7e5a, type: 3}
+  - Name: Icon-Play
+    Sprite: {fileID: -3787988184974068544, guid: 7206295f1812d4f49b089f733c3220e1, type: 3}
+  - Name: Icon-Plus
+    Sprite: {fileID: -444541536930034682, guid: 9647665546d32c6469f0db0d3d7c70d8, type: 3}
+  - Name: Icon-ReStart
+    Sprite: {fileID: 721006341020140194, guid: 7571e65f4ce62cd499f22360dd2d164a, type: 3}
+  - Name: Icon-Record
+    Sprite: {fileID: 2350071670150355062, guid: 7b56bcb0013c2734588748c5d5fec83c, type: 3}
+  - Name: Icon-Shopping
+    Sprite: {fileID: 8401136642105009837, guid: 4bbef72c68286c646b1c902ad3e3cf15, type: 3}
+  - Name: Icon-Shopping-Text
+    Sprite: {fileID: -9042658547867858229, guid: 9efdc089913f6344a81862e9f1ba0f4e, type: 3}
+  - Name: Icon-Skip
+    Sprite: {fileID: -1753170391, guid: 2e8158b25d4fa2943b5d93395d049993, type: 3}
+  - Name: Icon-Step
+    Sprite: {fileID: -2465228846969034515, guid: afe6a57f15f02cd4da65efe1cf797523, type: 3}
+  - Name: Icon-Time
+    Sprite: {fileID: -1948544319921968650, guid: f79d67d8124ffdd4c820c010d26b02af, type: 3}
+  - Name: Icon-User
+    Sprite: {fileID: 1336022319, guid: 6c848203dc263204f8cb183e0696267b, type: 3}
+  - Name: Icon-X
+    Sprite: {fileID: -3555019387143726901, guid: 2e653f13a2ee9cf4c8174c11a04b6325, type: 3}
+  - Name: Icon-X-02
+    Sprite: {fileID: 4084861872323986609, guid: 71322cc3c5fc21f438234772853a4983, type: 3}
+  - Name: Ribbon-Green
+    Sprite: {fileID: -6963529, guid: ef3e35f8aa2997c4fa1dd12e448b7fd3, type: 3}
+  - Name: Ribbon-Orange
+    Sprite: {fileID: 1910395315707388023, guid: 75105e0da8df06645b7c657eae6bd0d0, type: 3}
+  - Name: Ribbon-Purple
+    Sprite: {fileID: -5495834082824434354, guid: 87779738e787cdb458d06fd70ab06a5d, type: 3}
+  - Name: SCR-001-Camera-bg
+    Sprite: {fileID: -8896994200079519304, guid: e2bad63077de1b647858662bd11107c9, type: 3}
+  - Name: SCR-001-Camera-icon
+    Sprite: {fileID: 6000982184857295483, guid: 71783cf76351bb14f9bd7f6c7ee5829e, type: 3}
+  - Name: SCR-001-Foot-bg
+    Sprite: {fileID: 6748256228414572037, guid: 35d21ada4eb2045419dea92bea0cf3d1, type: 3}
+  - Name: SCR-001-Foot-icon
+    Sprite: {fileID: 1754844802, guid: 4640d14b4b7ee524ebb79363e4c8705c, type: 3}
+  - Name: SCR-001-bg
+    Sprite: {fileID: 833721293410611012, guid: 4509a68839221bc48aa10fb3598bf437, type: 3}
+  - Name: SCR-002-Dot-Line
+    Sprite: {fileID: 1677559289, guid: 1bcd5e84a826ef44ca51c28eb17e39c8, type: 3}
+  - Name: SCR-002-TV
+    Sprite: {fileID: 2328426658844214606, guid: 4ca2b81edbfc7ec47970926d7c7f7237, type: 3}
+  - Name: SCR-002-Title-Text
+    Sprite: {fileID: 2105488412, guid: 34503d857ecdbca458feac8c491b2cb4, type: 3}
+  - Name: SCR-002-bg
+    Sprite: {fileID: -8351645254518868790, guid: 1148da3350654b94fb5c6b7823815fbd, type: 3}
+  - Name: SCR-003-Notice
+    Sprite: {fileID: 21300000, guid: dad06e26e31c5294793512495da6a0b6, type: 3}
+  - Name: SCR-003-Title-Text
+    Sprite: {fileID: 21300000, guid: 138c5685ad10ae04da974fa26b00c33d, type: 3}
+  - Name: SCR-003-User-Bg-Trans
+    Sprite: {fileID: 21300000, guid: 49d385136668729488b05cdd7e7f9ef1, type: 3}
+  - Name: SCR-004-IndividualGame
+    Sprite: {fileID: -4497091117430540619, guid: c92bf28611db0654e91054c9c4e79a4e, type: 3}
+  - Name: SCR-004-StoryGame
+    Sprite: {fileID: 7310455008676257813, guid: fc3d475d028de1d4298638e8519c7075, type: 3}
+  - Name: SCR-005-Cooking-Box
+    Sprite: {fileID: 5772590995997925176, guid: c8e55ffaba983cc46b79b368c302d44d, type: 3}
+  - Name: SCR-005-Harvest-Box
+    Sprite: {fileID: 857656579963682499, guid: 8f539eb2196591f4faf7ae3bdb1e9f5e, type: 3}
+  - Name: SCR-005-Shopping-Box
+    Sprite: {fileID: -3917482660674241337, guid: 3e55e174e7646614db9dd72320d8c7b4, type: 3}
+  - Name: SCR-006-Title
+    Sprite: {fileID: -492706215, guid: af854b2b12efd4747936897f254ebfd9, type: 3}
+  - Name: SCR-006-Video-Bg
+    Sprite: {fileID: -1761937117073473530, guid: c00d61ae705a06a4f945739612d16980, type: 3}
+  - Name: SCR-007-Bg
+    Sprite: {fileID: -5216532702185002546, guid: 65d3f05023abab644b230897bb88f74c, type: 3}
+  - Name: SCR-007-Sequence
+    Sprite: {fileID: -943201551, guid: 2e91abde04a87a64b8e2c73fb404aa88, type: 3}
+  - Name: SCR-007-Sequence-01
+    Sprite: {fileID: -1989038691432317075, guid: db2a5ab621f7adc429d574a216b6ae73, type: 3}
+  - Name: SCR-007-Sequence-02
+    Sprite: {fileID: -9198048418561944016, guid: dbb2243e6e048d743893ffd2db00f0ee, type: 3}
+  - Name: SCR-007-Sequence-03
+    Sprite: {fileID: -901625782628174968, guid: 9703d1419c62d0343942de78362cf225, type: 3}
+  - Name: SCR-007-Title
+    Sprite: {fileID: 21300000, guid: ae3754db4e2bcd4429eb5a8fb56e5c5f, type: 3}
+  - Name: SCR-007-Tutorial
+    Sprite: {fileID: -4773693079930878123, guid: cd31f7e73f4fc484d815f30e63842021, type: 3}
+  - Name: SCR-008-Bg
+    Sprite: {fileID: -199376506131874665, guid: 4f46c7d094d5e134486136f417d3a3c0, type: 3}
+  - Name: SCR-008-Tree-01
+    Sprite: {fileID: 1511981981916118341, guid: 6fc9e4153027ee14ba1a90a646eaed9a, type: 3}
+  - Name: SCR-008-Tree-02
+    Sprite: {fileID: -930276361, guid: 9e4aabca9a688084dba9709877a59a61, type: 3}
+  - Name: SCR-008-Vegetable-01
+    Sprite: {fileID: -3227552176700456100, guid: b0be40fcddc217c43bac939e47594939, type: 3}
+  - Name: SCR-008-Vegetable-01-Bug
+    Sprite: {fileID: 665213863494778107, guid: c165f240d0fe09b46bdd8020fa8eae71, type: 3}
+  - Name: SCR-008-Vegetable-02
+    Sprite: {fileID: 1717677496143167477, guid: 3deabbede47081a49aab69f5ea0a7044, type: 3}
+  - Name: SCR-008-Vegetable-03
+    Sprite: {fileID: 5120160519739838126, guid: 1f6c359c89cec73499fe58b25ec89753, type: 3}
+  - Name: SCR-008-Vegetable-04
+    Sprite: {fileID: 136752926441209233, guid: 65e6fed3d35f9e64182f041aa63736e2, type: 3}
+  - Name: SCR-008-Vegetable-05
+    Sprite: {fileID: -7604945292894776310, guid: 16fa97d82a9afac4780d5d74c9541885, type: 3}
+  - Name: SCR-008-Vegetable-06
+    Sprite: {fileID: 2764725439868170931, guid: c6053ad8a27694c4e876e8ce7a2aa4c2, type: 3}
+  - Name: SCR-008-Vegetable-07
+    Sprite: {fileID: -8097952852741122745, guid: 4beadb18f434b1c4db41e306e900db74, type: 3}
+  - Name: SCR-008-Vegetable-08
+    Sprite: {fileID: 6240326264169288569, guid: 733e4e5d4ff493c46ac8cec4325d12bb, type: 3}
+  - Name: SCR-008-Vine-01
+    Sprite: {fileID: -7790041131960836821, guid: 4dfda7ded1409284593c65a354748fda, type: 3}
+  - Name: SCR-008-Vine-02
+    Sprite: {fileID: 2087982607982789332, guid: 568a0fffe6d6db845a8165e7ec6a37c4, type: 3}
+  - Name: SCR-009-Ground
+    Sprite: {fileID: 2458426261649318283, guid: 9082d0406825ee14e8aa0def2f7c3b5c, type: 3}
+  - Name: SCR-010-Title
+    Sprite: {fileID: -3908859866252052009, guid: 06e9887ca2fc5024585f04051ed6df2d, type: 3}
+  - Name: SCR-011_Title
+    Sprite: {fileID: 21300000, guid: 7a75e53917417ae44abfb6715909e564, type: 3}
+  - Name: SCR-012-Title
+    Sprite: {fileID: 21300000, guid: 19de7b48ea9720c47957c30f74407c62, type: 3}
+  - Name: SCR-013-Bg
+    Sprite: {fileID: 738132911963204701, guid: 9d9db1894eb2ccf489ea18bfec9db3cf, type: 3}
+  - Name: SCR-013-Food-Bg
+    Sprite: {fileID: 21300000, guid: 60e406b814076cd4b91fab1c2a2676f6, type: 3}
+  - Name: SCR-013-Food-Bg-On
+    Sprite: {fileID: -2359407463266961619, guid: 6624fedf6f542274d9cdfb211767e5e7, type: 3}
+  - Name: SCR-013-Food-Name-Bg
+    Sprite: {fileID: 2410468838577034302, guid: 430248fe0f300634689b00294e66156b, type: 3}
+  - Name: SCR-013-Food-Name-Bg_On
+    Sprite: {fileID: -7676377550264312363, guid: ab2ad9bed7d55fb4981cdca5476ae11d, type: 3}
+  - Name: SCR-013-FoodBoard
+    Sprite: {fileID: -5935504473154214901, guid: 1e62cebd735ca5e45b6fb0e90bfe8da0, type: 3}
+  - Name: SCR-013-FoodBoard-On
+    Sprite: {fileID: 3371846706603737435, guid: 9b0dd39c4f58f08489ae2740829224a3, type: 3}
+  - Name: SCR-013-Light
+    Sprite: {fileID: 1598803396094152531, guid: 16804ea7d448ab24bae619f23f75cb0e, type: 3}
+  - Name: SCR-013-S1-Food-01
+    Sprite: {fileID: -5386004291486089595, guid: d582da36d0493bf47bb50b0e242cbd16, type: 3}
+  - Name: SCR-013-S1-Food-03
+    Sprite: {fileID: -8922553637384264128, guid: 6e4b00ec7c686084b965a0410ae773d9, type: 3}
+  - Name: SCR-013-S1-Food-05
+    Sprite: {fileID: -7502743742679223533, guid: accc89c33f71e7142b22106d36b34ec5, type: 3}
+  - Name: SCR-013-S2-Food-01
+    Sprite: {fileID: 1838274779261311520, guid: 9866437e239bbb447a9b3ccf013560b8, type: 3}
+  - Name: SCR-013-S2-Food-02
+    Sprite: {fileID: -8528315497849698199, guid: 03a407d37d58dad47a34db1275c45e8c, type: 3}
+  - Name: SCR-013-S2-Food-03
+    Sprite: {fileID: -6094220595196407421, guid: 2e295a1972bd22941b54feeebf183e6c, type: 3}
+  - Name: SCR-013-S2-Food-04
+    Sprite: {fileID: 8804046051128193079, guid: fc3f02c65d7ab0f4d8c6de4b2c027fdd, type: 3}
+  - Name: SCR-013-S3-Food-01
+    Sprite: {fileID: -5989164247999223636, guid: 7a2e536891072504eb3d6e55a5ef6c33, type: 3}
+  - Name: SCR-013-S3-Food-03
+    Sprite: {fileID: 3301320900804649440, guid: 484940e45f76eb541b8087b1700a014c, type: 3}
+  - Name: SCR-013-S4-Food-01
+    Sprite: {fileID: -7373462448333255884, guid: 575cc021580526b43ab528fecc7ca0fe, type: 3}
+  - Name: SCR-013-S4-Food-02
+    Sprite: {fileID: 4505898467855912558, guid: d12a030721552ba408f9499bd2a16fda, type: 3}
+  - Name: SCR-013-S4-Food-05
+    Sprite: {fileID: -6730691750216571702, guid: b807c79407f133248b4627319ceab809, type: 3}
+  - Name: SCR-013-Score-01
+    Sprite: {fileID: -8184590424162876840, guid: 058a059d1a522c841b61cd831b90bb22, type: 3}
+  - Name: SCR-013-Score-02
+    Sprite: {fileID: 8119273649958282586, guid: 8f997b4b756333a4191b6d096584a0e4, type: 3}
+  - Name: SCR-013-Score-03
+    Sprite: {fileID: -8725379321939159187, guid: 3b92e49134f94544ba08938edd70acb0, type: 3}
+  - Name: SCR-013-Score-04
+    Sprite: {fileID: 1296875114579654043, guid: da81119fb839ff64386c5d5390076b00, type: 3}
+  - Name: SCR-015-Title
+    Sprite: {fileID: 987691977620406773, guid: 69112fbe31772e84f8002ea112c2dc0b, type: 3}
+  - Name: SCR-016-Title
+    Sprite: {fileID: 21300000, guid: fd612e623dfcb1344b463f80bf31c35a, type: 3}
+  - Name: SCR-017-Bg
+    Sprite: {fileID: 1429361003720709809, guid: e241d69aefcfb3d48b02abd5fe98c653, type: 3}
+  - Name: SCR-017-title
+    Sprite: {fileID: 21300000, guid: 12642d87c302f2649ba77d2477231fd9, type: 3}
+  - Name: SCR-018-Food-01
+    Sprite: {fileID: 4200366404866976016, guid: 7f0eb5b5849433044a1d0cad7f8f342b, type: 3}
+  - Name: SCR-018-Food-02
+    Sprite: {fileID: 2724462245464489043, guid: 59085c987a7a6a543b448a0f73cc9312, type: 3}
+  - Name: SCR-018-Food-03
+    Sprite: {fileID: 4466079668643588226, guid: 64ec6cab8c3c90647a77ceb85e060830, type: 3}
+  - Name: SCR-018-Food-04
+    Sprite: {fileID: 5836410681862690350, guid: e94217dac79be95418b5504d7536d1f8, type: 3}
+  - Name: SCR-018-Food-05
+    Sprite: {fileID: -6502945261512215728, guid: e54fdffa6ea9e0548960a2c46f083bf7, type: 3}
+  - Name: SCR-018-Food-06
+    Sprite: {fileID: 6504488122532154534, guid: edfe27762fe9f134db7aef7966efe9ec, type: 3}
+  - Name: SCR-018-Food-07
+    Sprite: {fileID: 7129326411444897941, guid: 3aad57489328d4141bcc21f995695351, type: 3}
+  - Name: SCR-018-Food-08
+    Sprite: {fileID: 3095394316950010484, guid: dbd35add613d56045b869835e1a09f15, type: 3}
+  - Name: SCR-018-Food-09
+    Sprite: {fileID: -5166128410298992434, guid: a594771d2fc50cf4fb4592cf3cf4e9b8, type: 3}
+  - Name: SCR-018-Food-10
+    Sprite: {fileID: -7598099660687875699, guid: 354095981c0373240ac25f7829c0f5e0, type: 3}
+  - Name: SCR-018-Popup-Bg
+    Sprite: {fileID: 21300000, guid: 97ac6bd98f6ee9c4f9906ac0df53542d, type: 3}
+  - Name: SCR-018-Popup-Title
+    Sprite: {fileID: 21300000, guid: e8f7c254908365644bafae3902aab061, type: 3}
+  - Name: SCR-020-Title
+    Sprite: {fileID: 5356944609198590273, guid: f7e67ed1c1c52d1468d9e497e75e9fd9, type: 3}
+  - Name: SCR-021-Title
+    Sprite: {fileID: 21300000, guid: 5ef339350ba993f4698b17b468d15799, type: 3}
+  - Name: SCR-022-Bg
+    Sprite: {fileID: -2121587205078946994, guid: 55d0832dc5ff38645be1d03e01c6e84d, type: 3}
+  - Name: SCR-022-Box
+    Sprite: {fileID: 5650455650713819815, guid: 577d11ca32326564a95eec84158d9894, type: 3}
+  - Name: SCR-022-Table-01
+    Sprite: {fileID: 2021937996508269339, guid: 8ba5c98a12137cb45b722149c608958c, type: 3}
+  - Name: SCR-022-Table-02
+    Sprite: {fileID: -65324355655948093, guid: 682c10727e1730942a1f3fe181fe873d, type: 3}
+  - Name: SCR-022-Table-03
+    Sprite: {fileID: 8722544463713944171, guid: a9f6c49bdb74b0946b9f2a6b2c6fc000, type: 3}
+  - Name: SCR-022-Title
+    Sprite: {fileID: 2580051898918854761, guid: 8e52f82282039e34188ef13e9e497fed, type: 3}
+  - Name: SCR-023-Box
+    Sprite: {fileID: -9088923597794235782, guid: e547c6970afa85540adf8d40c0182443, type: 3}
+  - Name: Text-Select
+    Sprite: {fileID: -8245480639744957913, guid: d006f0e1382d644469477d258bb920b2, type: 3}
+  - Name: Time-Bg
+    Sprite: {fileID: 6711709352597747423, guid: 266ce052710fa064489b839f2956921c, type: 3}
+  - Name: TimeBar
+    Sprite: {fileID: 21300000, guid: 0f16e38a3debe4d4e9da39a06624c1a7, type: 3}
+  - Name: TimeBar-Bg
+    Sprite: {fileID: 1650276234605962304, guid: e09610fb7c27d544a8d469ee91c5240f, type: 3}
+  - Name: TimeBar-Bg-02
+    Sprite: {fileID: 21300000, guid: daa99a3767aadb447a8492c15c1d0589, type: 3}
+  - Name: Title-bg
+    Sprite: {fileID: -3712266215825066286, guid: b7fbc02a2b20a364f84807e989039b44, type: 3}
+  Fonts:
+  - {fileID: 12800000, guid: 8225e4a57eef5ad4b93d3047413ee228, type: 3}
+  - {fileID: 12800000, guid: 9fde06266908b4f4681709739665d219, type: 3}
+  - {fileID: 12800000, guid: 70349796ba2d3d74b975af89cd62daa2, type: 3}
+  - {fileID: 12800000, guid: 6bdffcda64af4934d8ec2ec701fb7871, type: 3}
+  - {fileID: 12800000, guid: 61320883c19f94b489150aa1aabf3511, type: 3}

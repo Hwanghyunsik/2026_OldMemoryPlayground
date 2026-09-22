@@ -1,0 +1,608 @@
+fileFormatVersion: 2
+guid: 34503d857ecdbca458feac8c491b2cb4
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 2819926639770599046
+    second: SCR-002-Title-Text_0
+  - first:
+      213: 4537303065410654847
+    second: SCR-002-Title-Text_1
+  - first:
+      213: 7384038914565646730
+    second: SCR-002-Title-Text_2
+  - first:
+      213: -4422885054151934636
+    second: SCR-002-Title-Text_3
+  - first:
+      213: 3878853786244802312
+    second: SCR-002-Title-Text_4
+  - first:
+      213: -2312703504957077878
+    second: SCR-002-Title-Text_5
+  - first:
+      213: -8314434558341328069
+    second: SCR-002-Title-Text_6
+  - first:
+      213: -2911862857860448759
+    second: SCR-002-Title-Text_7
+  - first:
+      213: -5727029952839284214
+    second: SCR-002-Title-Text_8
+  - first:
+      213: -4309274965772910905
+    second: SCR-002-Title-Text_9
+  - first:
+      213: -4438240955880071775
+    second: SCR-002-Title-Text_10
+  - first:
+      213: -2307846884317208181
+    second: SCR-002-Title-Text_11
+  - first:
+      213: -2876871911114238835
+    second: SCR-002-Title-Text_12
+  - first:
+      213: 2974953411085304931
+    second: SCR-002-Title-Text_13
+  - first:
+      213: 7232385437657634547
+    second: SCR-002-Title-Text_14
+  - first:
+      213: 4688799482634777102
+    second: SCR-002-Title-Text_15
+  - first:
+      213: 492821561217865423
+    second: SCR-002-Title-Text_16
+  - first:
+      213: -3236208492723545082
+    second: SCR-002-Title-Text_17
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 21
+        width: 32
+        height: 29
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 68eff289654622720800000000000000
+      internalID: 2819926639770599046
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_1
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 21
+        width: 19
+        height: 29
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f72d71c291db7fe30800000000000000
+      internalID: 4537303065410654847
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_2
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 6
+        width: 33
+        height: 43
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a89a85e3540697660800000000000000
+      internalID: 7384038914565646730
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_3
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 2
+        width: 13
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45db3e80a71ce92c0800000000000000
+      internalID: -4422885054151934636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_4
+      rect:
+        serializedVersion: 2
+        x: 97
+        y: 22
+        width: 29
+        height: 27
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 807ecc0b7f474d530800000000000000
+      internalID: 3878853786244802312
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_5
+      rect:
+        serializedVersion: 2
+        x: 129
+        y: 13
+        width: 19
+        height: 37
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a868b3c5a60a7efd0800000000000000
+      internalID: -2312703504957077878
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_6
+      rect:
+        serializedVersion: 2
+        x: 162
+        y: 7
+        width: 32
+        height: 41
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3355d922d13d9c80800000000000000
+      internalID: -8314434558341328069
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_7
+      rect:
+        serializedVersion: 2
+        x: 196
+        y: 2
+        width: 13
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90ef292982cf697d0800000000000000
+      internalID: -2911862857860448759
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_8
+      rect:
+        serializedVersion: 2
+        x: 210
+        y: 38
+        width: 31
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0a0efad9908580b0800000000000000
+      internalID: -5727029952839284214
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_9
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 2
+        width: 51
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ce3f9900416234c0800000000000000
+      internalID: -4309274965772910905
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_10
+      rect:
+        serializedVersion: 2
+        x: 260
+        y: 6
+        width: 35
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ad9d2d8d533862c0800000000000000
+      internalID: -4438240955880071775
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_11
+      rect:
+        serializedVersion: 2
+        x: 287
+        y: 2
+        width: 20
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b81e7487c71e8ffd0800000000000000
+      internalID: -2307846884317208181
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_12
+      rect:
+        serializedVersion: 2
+        x: 326
+        y: 23
+        width: 46
+        height: 27
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d849cb93d3c4318d0800000000000000
+      internalID: -2876871911114238835
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_13
+      rect:
+        serializedVersion: 2
+        x: 373
+        y: 1
+        width: 49
+        height: 49
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 364831b8d58294920800000000000000
+      internalID: 2974953411085304931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_14
+      rect:
+        serializedVersion: 2
+        x: 423
+        y: 5
+        width: 47
+        height: 44
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f69a4a9c389e5460800000000000000
+      internalID: 7232385437657634547
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_15
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 0
+        width: 38
+        height: 21
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e023b718946f11140800000000000000
+      internalID: 4688799482634777102
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_16
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 0
+        width: 39
+        height: 21
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc65b0e499ad6d600800000000000000
+      internalID: 492821561217865423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text_17
+      rect:
+        serializedVersion: 2
+        x: 325
+        y: 0
+        width: 48
+        height: 25
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 60c5c14a58da613d0800000000000000
+      internalID: -3236208492723545082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SCR-002-Title-Text-Full
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 470
+        height: 50
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8718eb1c09ba21546a8a8626ae21e2bb
+      internalID: 2105488412
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: c79dcd7baf95e4843977e355dc628e51
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      SCR-002-Title-Text-Full: 2105488412
+      SCR-002-Title-Text_0: 2819926639770599046
+      SCR-002-Title-Text_1: 4537303065410654847
+      SCR-002-Title-Text_10: -4438240955880071775
+      SCR-002-Title-Text_11: -2307846884317208181
+      SCR-002-Title-Text_12: -2876871911114238835
+      SCR-002-Title-Text_13: 2974953411085304931
+      SCR-002-Title-Text_14: 7232385437657634547
+      SCR-002-Title-Text_15: 4688799482634777102
+      SCR-002-Title-Text_16: 492821561217865423
+      SCR-002-Title-Text_17: -3236208492723545082
+      SCR-002-Title-Text_2: 7384038914565646730
+      SCR-002-Title-Text_3: -4422885054151934636
+      SCR-002-Title-Text_4: 3878853786244802312
+      SCR-002-Title-Text_5: -2312703504957077878
+      SCR-002-Title-Text_6: -8314434558341328069
+      SCR-002-Title-Text_7: -2911862857860448759
+      SCR-002-Title-Text_8: -5727029952839284214
+      SCR-002-Title-Text_9: -4309274965772910905
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

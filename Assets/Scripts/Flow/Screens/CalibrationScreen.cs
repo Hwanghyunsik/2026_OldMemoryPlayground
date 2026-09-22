@@ -1,12 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Interaction;
 using Shinmyeong.Tracking;
+using Shinmyeong.UI;
 
 namespace Shinmyeong.Flow.Screens
 {
-    /// SCR-002 사용자 감지·보정 (설계서 p6 확정) — 위치 안내 + 개인 기준값 보정을 한 화면에 통합.
-    /// 요소: 안내 헤더 · 실시간 카메라 영상 + 전신 정렬 가이드(사각형+스켈레톤) · 가변 보정 메시지 ·
-    ///   권장 거리 안내 · 4단계 체크리스트(쉬운 말 · 기술 용어 금지) · 완료 시 SCR-003 자동 이동(버튼 없음) ·
+    /// SCR-002 사용자 감지·보정 (설계서 p6 확정 · 시안 SCR-002) — 위치 안내 + 개인 기준값 보정을 한 화면에 통합.
+    /// 요소: 안내 헤더 · 실시간 카메라 영상 + 전신 정렬 가이드(점선 사각형+스켈레톤) · 가변 보정 메시지 ·
+    ///   권장 거리 안내 · 4단계 체크리스트(쉬운 말 · 기술 용어 금지) · 유지 게이지 · 완료 시 SCR-003 자동 이동(버튼 없음) ·
     ///   처음으로(dwell 3초 — 입력 방식 개발 판단 ⑧ 기준안).
     /// 여기서 확보한 기준값(Calibration)이 이후 판정 영역 산출의 기준이 된다(5-8).
     public class CalibrationScreen : ScreenBase
@@ -16,17 +18,18 @@ namespace Shinmyeong.Flow.Screens
 
         static readonly string[] StepLabels =
         {
-            "화면에 보여요",
-            "머리부터 발까지 보여요",
-            "가운데에 서 있어요",
-            "준비 완료",
+            "사람이 확인되었습니다",
+            "온몸이 화면에 들어왔습니다",
+            "가운데에 서 계십니다",
+            "준비를 마무리하는 중입니다",
         };
 
         RawImage _preview;
         Text _previewFallback;
         Text _message;
-        Image[] _stepDots;
-        Text[] _stepTexts;
+        GameObject _messageBox;
+        GameObject[] _stepOn;
+        GameObject[] _stepOff;
         Image _holdFill;
         readonly Image[] _skeletonDots = new Image[PoseFrame.JointCount];
         RectTransform _previewRect;
@@ -38,103 +41,84 @@ namespace Shinmyeong.Flow.Screens
 
         protected override void BuildUi()
         {
-            UiKit.Panel(transform, "BG", new Color(0.10f, 0.14f, 0.14f));
-            UiKit.Label(transform, "Title", new Vector2(0.5f, 0.92f), new Vector2(1000, 70), 46, "잠시만 기다려 주세요");
-            UiKit.Label(transform, "Sub", new Vector2(0.5f, 0.855f), new Vector2(1100, 44), 30,
-                "화면 앞 발자국 위치에 편하게 서 주세요");
+            UiKit.Background(transform, "SCR-002-bg");
 
-            // 실시간 카메라 영상 (거울 방향) — 비인터랙션 표시 요소
-            var frame = UiKit.Panel(transform, "PreviewFrame", new Color(0f, 0f, 0f, 0.45f));
-            frame.rectTransform.SetSizeWithAnchors(new Vector2(0.35f, 0.51f), new Vector2(660, 500));
+            var header = UiKit.HeaderPaper(transform);
+            UiKit.ImgFit(header, "Title", "SCR-002-Title-Text", 357, 48, 470, 50);
+            var leafL = UiKit.ImgFit(header, "LeafLeft", "Icon-Leaf", 302, 53, 37, 42);
+            leafL.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+            leafL.rectTransform.anchoredPosition += new Vector2(37, 0);
+            UiKit.ImgFit(header, "LeafRight", "Icon-Leaf", 841, 52, 36, 41);
+            UiKit.Txt(header, "Subtitle", 0, 114, 1184, 28, "화면 속 사각형 안에 온 몸이 들어오도록 서 주세요.", 28, 5, Skin.Brown);
+
+            // 큰 판
+            var main = UiKit.Node(transform, "MainPanel", 244, 253, 1432, 663);
+            UiKit.Img(main, "OuterRim", "Box-Round-23", 0, 0, 1432, 663, Skin.Cream, sliced: true);
+            UiKit.Img(main, "Fill", "Box-Round-23", 6, 7, 1420, 650, Skin.FaceWarm, sliced: true);
+            UiKit.Img(main, "Border", "Box-Round-23-Outline", 4, 5, 1424, 652, Skin.Outline2, sliced: true);
+
+            // 카메라 영상 (거울 방향) — 비인터랙션 표시 요소
+            var cam = UiKit.Node(transform, "CameraPanel", 266, 276, 695, 617);
+            UiKit.Img(cam, "Fill", "Box-Round-20", 0, 0, 695, 617, Skin.Cream, sliced: true);
+            UiKit.Img(cam, "Border", "Box-Round-20-Outline", 0, 0, 695, 617, Skin.Outline2, sliced: true);
             var previewGo = new GameObject("Preview");
-            previewGo.transform.SetParent(frame.transform, false);
+            previewGo.transform.SetParent(cam, false);
             _preview = previewGo.AddComponent<RawImage>();
             _preview.raycastTarget = false;
-            _previewRect = previewGo.GetComponent<RectTransform>();
-            _previewRect.anchorMin = new Vector2(0.02f, 0.02f);
-            _previewRect.anchorMax = new Vector2(0.98f, 0.98f);
-            _previewRect.sizeDelta = Vector2.zero;
-            _previewFallback = UiKit.Label(frame.transform, "Fallback", new Vector2(0.5f, 0.5f), new Vector2(400, 60), 28,
-                "카메라 영상");
-
-            // 전신 정렬 가이드 — 점선 대용 프레임 (자산 도입 시 점선+실루엣으로 교체)
-            var guide = new GameObject("BodyGuide");
-            guide.transform.SetParent(frame.transform, false);
-            var guideRect = guide.AddComponent<RectTransform>();
-            guideRect.anchorMin = new Vector2(0.28f, 0.06f);
-            guideRect.anchorMax = new Vector2(0.72f, 0.96f);
-            guideRect.sizeDelta = Vector2.zero;
-            BuildBorder(guideRect, new Color(1f, 0.9f, 0.4f, 0.55f));
-
-            // 스켈레톤 점 풀
+            _previewRect = UiKit.Place(previewGo.GetComponent<RectTransform>(), 12, 12, 671, 593);
+            _previewFallback = UiKit.Txt(cam, "CameraPlaceholder", 0, 0, 695, 617, "카메라 영상", 28, 6, Skin.Hex("182027"));
+            // 전신 정렬 가이드 — 점선 사각형
+            UiKit.Img(cam, "BodyGuide", "Dot-Line-4", 175, 45, 344, 527, Skin.Green, sliced: true);
             for (int i = 0; i < PoseFrame.JointCount; i++)
             {
-                var dotGo = new GameObject($"Joint_{i}");
-                dotGo.transform.SetParent(frame.transform, false);
-                var dot = dotGo.AddComponent<Image>();
-                dot.raycastTarget = false;
-                dot.color = new Color(0.4f, 1f, 0.6f, 0.9f);
-                var rect = dotGo.GetComponent<RectTransform>();
-                rect.sizeDelta = new Vector2(14, 14);
-                dotGo.SetActive(false);
+                var dot = UiKit.Img(cam, $"Joint_{i}", "Circle-25", 0, 0, 14, 14, new Color(0.3f, 0.9f, 0.5f, 0.9f));
+                dot.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                dot.gameObject.SetActive(false);
                 _skeletonDots[i] = dot;
             }
+            // 가변 보정 메시지 — 영상 아래쪽 어두운 띠
+            _messageBox = UiKit.Img(cam, "MoveBackNotice", "Box-Round-20", 49, 454, 607, 123, new Color(0f, 0f, 0f, 0.9f), sliced: true).gameObject;
+            _message = UiKit.Txt(_messageBox.transform, "MoveBackText", 0, 0, 607, 123, "", 28, 6, Skin.Cream);
 
-            // 가변 보정 메시지 — 프리뷰 아래
-            _message = UiKit.Label(transform, "Message", new Vector2(0.35f, 0.20f), new Vector2(700, 56), 34, "");
-            _message.color = new Color(1f, 0.93f, 0.6f);
+            // 권장 거리 안내
+            var dist = UiKit.Node(transform, "DistanceGuide", 983, 276, 672, 247);
+            UiKit.Img(dist, "Fill", "Box-Round-20", 0, 0, 672, 247, Skin.Cream, sliced: true);
+            UiKit.Img(dist, "Border", "Box-Round-20-Outline", 0, 0, 672, 247, Skin.Outline2, sliced: true);
+            UiKit.Txt(dist, "Title", 34, 28, 260, 35, "권장 거리 안내", 35, 6, Skin.Brown, TextAnchor.MiddleLeft);
+            UiKit.ImgFit(dist, "TV", "SCR-002-TV", 80, 91, 125, 95);
+            UiKit.ImgFit(dist, "DistanceArrow", "SCR-002-Dot-Line", 237, 140, 250, 13);
+            UiKit.ImgFit(dist, "Footprints", "SCR-001-Foot-icon", 515, 90, 93, 83);
+            UiKit.Txt(dist, "DistanceValue", 314, 107, 100, 25, "약 3M", 25, 7, Skin.Brown, TextAnchor.MiddleLeft);
+            UiKit.Txt(dist, "ScreenLabel", 124, 199, 70, 22, "화면", 22, 5, Skin.Brown, TextAnchor.MiddleLeft);
+            UiKit.Txt(dist, "UserLabel", 508, 199, 130, 22, "사용자 위치", 22, 5, Skin.Brown, TextAnchor.MiddleLeft);
 
-            // 우측: 4단계 체크리스트 (완료 = 초록 체크 / 대기 = 회색)
-            _stepDots = new Image[StepLabels.Length];
-            _stepTexts = new Text[StepLabels.Length];
+            // 인식·보정 상태 — 4단계 체크리스트
+            var status = UiKit.Node(transform, "RecognitionStatus", 982, 533, 672, 359);
+            UiKit.Img(status, "Fill", "Box-Round-20", 0, 0, 672, 359, Skin.Cream, sliced: true);
+            UiKit.Img(status, "Border", "Box-Round-20-Outline", 0, 0, 672, 359, Skin.Outline2, sliced: true);
+            UiKit.Txt(status, "Title", 35, 33, 295, 35, "인식·보정 상태", 35, 6, Skin.Brown, TextAnchor.MiddleLeft);
+            _stepOn = new GameObject[StepLabels.Length];
+            _stepOff = new GameObject[StepLabels.Length];
             for (int i = 0; i < StepLabels.Length; i++)
             {
-                var row = UiKit.Panel(transform, $"Step_{i}", new Color(1f, 1f, 1f, 0.07f));
-                row.rectTransform.SetSizeWithAnchors(new Vector2(0.71f, 0.655f - 0.095f * i), new Vector2(430, 78));
-                var dot = UiKit.Panel(row.transform, "Dot", new Color(0.45f, 0.45f, 0.45f));
-                dot.rectTransform.SetSizeWithAnchors(new Vector2(0.1f, 0.5f), new Vector2(40, 40));
-                _stepDots[i] = dot;
-                var label = UiKit.Label(row.transform, "Label", new Vector2(0.58f, 0.5f), new Vector2(330, 60), 30, StepLabels[i]);
-                label.alignment = TextAnchor.MiddleLeft;
-                _stepTexts[i] = label;
+                float y = 94 + i * 61.7f;
+                var row = UiKit.Node(status, $"Step{i + 1}", 29, y, 590, 52);
+                var on = UiKit.Node(row, "On", 0, 0, 53, 52);
+                UiKit.Img(on, "Circle", "Circle-outline", 0, 0, 53, 52, Skin.Green);
+                UiKit.ImgFit(on, "Check", "Icon-Check", 12, 13, 29, 25, Skin.Green);
+                var off = UiKit.Node(row, "Off", 0, 0, 53, 52);
+                UiKit.Img(off, "PendingFill", "Circle-25", 0, 0, 53, 52, Skin.Outline2);
+                UiKit.Img(off, "PendingRing", "Circle-outline", 0, 0, 53, 52, Skin.Hex("6c6252"));
+                UiKit.Txt(row, "Label", 73, 9, 520, 30, StepLabels[i], 30, 5, Skin.Brown, TextAnchor.MiddleLeft);
+                _stepOn[i] = on.gameObject;
+                _stepOff[i] = off.gameObject;
             }
-
             // 4단계 유지 게이지 (숫자 없음)
-            var gaugeBg = UiKit.Panel(transform, "HoldBg", new Color(1f, 1f, 1f, 0.12f));
-            gaugeBg.rectTransform.SetSizeWithAnchors(new Vector2(0.71f, 0.255f), new Vector2(430, 14));
-            var fill = UiKit.Panel(gaugeBg.transform, "Fill", new Color(0.4f, 0.85f, 0.5f));
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Horizontal;
-            _holdFill = fill;
+            _holdFill = UiKit.Bar(status, "HoldGauge", 35, 330, 600, 12, Skin.Track3, Skin.Green, "TimeBar", "TimeBar");
 
-            // 권장 거리 안내 + 자동 이동 안내
-            UiKit.Label(transform, "Distance", new Vector2(0.71f, 0.19f), new Vector2(500, 40), 26,
-                "화면에서 세 걸음(약 3m) 떨어져 주세요");
-            UiKit.Label(transform, "AutoInfo", new Vector2(0.5f, 0.075f), new Vector2(700, 36), 26,
-                "준비가 끝나면 저절로 넘어가요");
-
-            // 처음으로 — dwell 3초 (입력 방식 개발 판단 ⑧: UI 버튼 공통 규칙과 통일 · 기준안)
-            UiKit.Button(transform, "Home", new Vector2(0.28f, 0.145f), new Vector2(220, 90), "처음으로",
-                () => Flow.Go(ScreenId.SCR_001));
-        }
-
-        static void BuildBorder(RectTransform parent, Color color)
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                var go = new GameObject($"Border_{i}");
-                go.transform.SetParent(parent, false);
-                var img = go.AddComponent<Image>();
-                img.color = color;
-                img.raycastTarget = false;
-                var rect = go.GetComponent<RectTransform>();
-                bool horizontal = i < 2;
-                rect.anchorMin = new Vector2(0f, horizontal ? (i == 0 ? 0f : 1f) : 0f);
-                rect.anchorMax = new Vector2(horizontal ? 1f : (i == 2 ? 0f : 1f), horizontal ? rect.anchorMin.y : 1f);
-                if (!horizontal)
-                    rect.anchorMin = new Vector2(i == 2 ? 0f : 1f, 0f);
-                rect.sizeDelta = horizontal ? new Vector2(0, 4) : new Vector2(4, 0);
-            }
+            UiKit.NavButton(transform, "HomeButton", 44, 477, "처음으로", "Icon-Home", () => Flow.Go(ScreenId.SCR_001))
+                .gameObject.AddComponent<SafeAreaExempt>().Reason = "디자인 시안 배치(좌측 끝) — 2-4 안전 영역 밖 · 기획 확인 대기(Q5)";
+            UiKit.Footer(transform, "준비가 끝나면 자동으로 넘어갑니다", 699, 970, 496, 54, 25);
         }
 
         protected override void OnEnter()
@@ -174,12 +158,12 @@ namespace Shinmyeong.Flow.Screens
             SetStep(1, fullBody);
             SetStep(2, centered);
             SetStep(3, done);
-            _holdFill.fillAmount = Mathf.Clamp01(_holdTimer / HoldSeconds);
+            UiKit.SetBar(_holdFill, Mathf.Clamp01(_holdTimer / HoldSeconds));
 
-            _message.text = !present ? "화면 앞 발자국 위치에 서 주세요"
-                : !fullBody ? "한 걸음 뒤로 — 머리부터 발까지 화면에 들어오게 서 주세요"
-                : !centered ? (svc.BodyCenterX01 > 0.5f ? "조금 왼쪽으로 와 주세요" : "조금 오른쪽으로 와 주세요")
-                : "좋아요, 그대로 잠깐 계세요";
+            _message.text = !present ? "화면 앞 발자국 위치에 서 주세요."
+                : !fullBody ? "조금만 뒤로 물러나 주세요."
+                : !centered ? (svc.BodyCenterX01 > 0.5f ? "조금 왼쪽으로 와 주세요." : "조금 오른쪽으로 와 주세요.")
+                : "좋아요, 그대로 잠깐 계세요.";
 
             if (done)
             {
@@ -241,8 +225,10 @@ namespace Shinmyeong.Flow.Screens
 
         void SetStep(int index, bool on)
         {
-            _stepDots[index].color = on ? new Color(0.35f, 0.8f, 0.45f) : new Color(0.45f, 0.45f, 0.45f);
-            _stepTexts[index].color = on ? Color.white : new Color(1f, 1f, 1f, 0.55f);
+            if (_stepOn[index].activeSelf != on)
+                _stepOn[index].SetActive(on);
+            if (_stepOff[index].activeSelf == on)
+                _stepOff[index].SetActive(!on);
         }
 
         void UpdatePreview(BodyTrackingService svc)
@@ -258,7 +244,7 @@ namespace Shinmyeong.Flow.Screens
                 _preview.uvRect = svc.Mirror ? new Rect(1f, 0f, -1f, 1f) : new Rect(0f, 0f, 1f, 1f);
             }
 
-            // 스켈레톤 점 — 전신 진입 유도 보조 (개발 표현 · 자산 도입 시 정리)
+            // 스켈레톤 점 — 전신 진입 유도 보조
             var frame = svc != null ? svc.LatestFrame : null;
             for (int i = 0; i < PoseFrame.JointCount; i++)
             {
@@ -269,10 +255,7 @@ namespace Shinmyeong.Flow.Screens
                 var kp = frame.Keypoints[i];
                 float px = svc.Mirror ? 1f - kp.Position.x : kp.Position.x;
                 var rect = _skeletonDots[i].rectTransform;
-                rect.anchorMin = rect.anchorMax = new Vector2(
-                    Mathf.Lerp(0.02f, 0.98f, px),
-                    Mathf.Lerp(0.02f, 0.98f, 1f - kp.Position.y));
-                rect.anchoredPosition = Vector2.zero;
+                rect.anchoredPosition = new Vector2(12f + 671f * px, -(12f + 593f * kp.Position.y));
             }
         }
     }

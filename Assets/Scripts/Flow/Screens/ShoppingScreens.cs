@@ -3,22 +3,22 @@ using UnityEngine;
 using UnityEngine.UI;
 using Shinmyeong.Games.Shopping;
 using Shinmyeong.Interaction;
+using Shinmyeong.UI;
 
 namespace Shinmyeong.Flow.Screens
 {
     // SCR-012 장보기 튜토리얼은 GameTutorialScreen 공용 템플릿 사용 (2-5 확정: 템플릿 1 + 데이터 3벌)
 
-    /// SCR-013 장보기 플레이 — 종료 이동처만 모드 분기 (개별 014 / 스토리 015)
+    /// SCR-013 장보기 플레이 — 종료 이동처만 모드 분기 (개별 014 / 스토리 015).
+    /// 무대(점포·발판·장바구니·HUD)는 ShoppingDemo가 조립한다. 일시정지는 상단 좌측(2-4 확정 예외 · 시안 x58 y79).
     public class ShoppingPlayScreen : ScreenBase
     {
         ShoppingDemo _game;
 
         protected override void BuildUi()
         {
-            UiKit.Panel(transform, "BG", new Color(0.12f, 0.13f, 0.11f));
-            // 일시정지 — 장보기만 상단 좌측 220×116 (안전 영역 예외 · 확정 07 문서 2-4: x48 y34)
-            var pause = UiKit.Button(transform, "Pause", new Vector2(0.082f, 0.915f), new Vector2(220, 116),
-                "일시정지", PausePopup.Open, color: new Color(0.3f, 0.3f, 0.35f));
+            UiKit.Background(transform, "SCR-013-Bg");
+            var pause = UiKit.NavButton(transform, "PauseButton", 58, 79, "일시정지", "Icon-Pause", PausePopup.Open);
             pause.gameObject.AddComponent<SafeAreaExempt>().Reason = "장보기 일시정지 — 상단 좌측 (2-4 확정 예외)";
         }
 
@@ -30,6 +30,7 @@ namespace Shinmyeong.Flow.Screens
                 _game.Finished += OnFinished;
             }
             _game.Begin(Rect);
+            transform.Find("PauseButton").SetAsLastSibling();
         }
 
         protected override void OnExit() => _game?.End();
@@ -43,45 +44,40 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// SCR-014 장보기 개별 결과 (5-14 확정 · 재료 단위 20개).
+    /// SCR-014 장보기 개별 결과 (5-14 확정 · 재료 단위 20개 · 시안 SCR-014).
     /// 요약 카드 3종: 제대로 산 재료 · 다르게 산 재료 · 전체 활동 시간 (합 20 · 분모 미표기 · 힌트 도착도 제대로에 포함).
-    /// 나열: 종류 단위 묶음 + 개수 배지 · 위 = 제대로 / 아래 = 다르게(기울임) · 라운드 번호 미표시.
+    /// 나열: 종류 단위 묶음 + 개수 배지 · 위 = 제대로(초록 상자) / 아래 = 다르게(주황 상자 · 기울임) · 라운드 번호 미표시.
     /// 힌트·도착 시간·좌우 편차 등 상세 수치는 ADM 전용. 「잘못·틀린」 대신 「다르게 산」(확정).
     public class ShoppingResultScreen : ScreenBase
     {
         public static Save.PlayRecord LastPlay;
 
+        ResultKit.Header _header;
+        RectTransform _panel;
         Text[] _cardValues;
         GameObject _recordsButton;
+        RectTransform _properBox;
+        RectTransform _otherBox;
         readonly List<GameObject> _items = new List<GameObject>();
 
         protected override void BuildUi()
         {
-            UiKit.Panel(transform, "BG", new Color(0.11f, 0.13f, 0.12f));
-            UiKit.Label(transform, "Header", new Vector2(0.5f, 0.9f), new Vector2(900, 70), 50, "장보기를 마쳤어요");
-            UiKit.Label(transform, "Sub", new Vector2(0.5f, 0.84f), new Vector2(900, 44), 30, "사 오신 재료를 살펴보세요");
+            UiKit.Background(transform, "SCR-013-Bg");
+            _header = ResultKit.BuildHeader(transform, "장보기를 마쳤어요", "사 오신 재료를 살펴보세요");
+            _panel = ResultKit.BuildPanel(transform);
 
-            string[] cardNames = { "제대로 산 재료", "다르게 산 재료", "전체 활동 시간" };
             _cardValues = new Text[3];
-            for (int i = 0; i < 3; i++)
-            {
-                var card = UiKit.Panel(transform, $"Card_{i}", new Color(1f, 1f, 1f, 0.08f));
-                card.rectTransform.SetSizeWithAnchors(new Vector2(0.34f + 0.16f * i, 0.72f), new Vector2(260, 110));
-                UiKit.Label(card.transform, "Name", new Vector2(0.5f, 0.74f), new Vector2(240, 36), 26, cardNames[i]);
-                _cardValues[i] = UiKit.Label(card.transform, "Value", new Vector2(0.5f, 0.32f), new Vector2(240, 48), 36, "");
-            }
+            _cardValues[0] = ResultKit.SummaryCard(_panel, "Correct", 0, ResultKit.CardKind.Proper, "제대로 산 재료");
+            _cardValues[1] = ResultKit.SummaryCard(_panel, "Different", 1, ResultKit.CardKind.Other, "다르게 산 재료");
+            _cardValues[2] = ResultKit.SummaryCard(_panel, "Duration", 2, ResultKit.CardKind.Duration, "전체 활동 시간");
 
-            UiKit.Panel(transform, "Shelf", new Color(1f, 1f, 1f, 0.10f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.505f), new Vector2(1080, 12));
-            UiKit.Panel(transform, "Ground", new Color(0f, 0f, 0f, 0.22f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.31f), new Vector2(1080, 12));
+            _properBox = ResultKit.MaterialBox(_panel, "CorrectMaterials", 233, proper: true);
+            _otherBox = ResultKit.MaterialBox(_panel, "DifferentMaterials", 457, proper: false);
+            ResultKit.Ribbon(_panel, "GreenRibbon", 487, 211, true, "제대로 산 재료");
+            ResultKit.Ribbon(_panel, "OrangeRibbon", 483, 435, false, "다르게 산 재료");
 
-            UiKit.Button(transform, "Retry", new Vector2(0.3f, 0.145f), new Vector2(240, 95), "다시 하기",
-                () => Flow.Go(ScreenId.SCR_013));
-            UiKit.Button(transform, "Lobby", new Vector2(0.5f, 0.145f), new Vector2(280, 100), "다른 활동 고르기",
-                () => Flow.Go(ScreenId.SCR_005), color: new Color(0.3f, 0.6f, 0.35f));
-            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.7f, 0.145f), new Vector2(240, 95),
-                "내 기록 보기", () => Flow.Go(ScreenId.SCR_023)).gameObject;
+            _recordsButton = ResultKit.BuildButtons(transform,
+                () => Flow.Go(ScreenId.SCR_013), () => Flow.Go(ScreenId.SCR_005), () => Flow.Go(ScreenId.SCR_023));
         }
 
         protected override void OnEnter()
@@ -91,58 +87,35 @@ namespace Shinmyeong.Flow.Screens
                     Destroy(go);
             _items.Clear();
 
+            ResultKit.ApplyHeader(_header, Flow);
             int correct = 0, total = 0;
-            var groups = new List<(string label, int count, bool proper)>();
+            var pairs = new List<(string, bool)>();
             if (LastPlay != null)
                 foreach (var r in LastPlay.ShoppingItems)
                 {
                     total++;
                     if (r.Correct)
                         correct++;
-                    int idx = groups.FindIndex(g => g.label == r.BoughtItem && g.proper == r.Correct);
-                    if (idx >= 0)
-                        groups[idx] = (r.BoughtItem, groups[idx].count + 1, r.Correct);
-                    else
-                        groups.Add((r.BoughtItem, 1, r.Correct));
+                    pairs.Add((r.BoughtItem, r.Correct));
                 }
+            var groups = ResultKit.Group(pairs);
 
-            _cardValues[0].text = $"{correct} 개";
-            _cardValues[1].text = $"{total - correct} 개";
-            _cardValues[2].text = FormatDuration(LastPlay != null ? LastPlay.DurationSec : 0f);
+            _cardValues[0].text = ResultKit.CountText(correct);
+            _cardValues[1].text = ResultKit.CountText(total - correct);
+            _cardValues[2].text = ResultKit.DurationText(LastPlay != null ? LastPlay.DurationSec : 0f);
 
-            PlaceRow(groups.FindAll(g => g.proper), 0.575f, tilt: false);
-            PlaceRow(groups.FindAll(g => !g.proper), 0.38f, tilt: true);
+            PlaceRow(_properBox, groups.FindAll(g => g.proper), proper: true);
+            PlaceRow(_otherBox, groups.FindAll(g => !g.proper), proper: false);
 
             _recordsButton.SetActive(!Flow.IsGuest);
         }
 
-        void PlaceRow(List<(string label, int count, bool proper)> row, float y, bool tilt)
+        void PlaceRow(RectTransform box, List<(string label, int count, bool proper)> row, bool proper)
         {
+            float pitch = ResultKit.Pitch(row.Count, 1180, 110, 134);
             for (int i = 0; i < row.Count; i++)
-            {
-                float x = 0.5f + (i - (row.Count - 1) * 0.5f) * 0.085f;
-                var card = UiKit.Panel(transform, $"Item_{row[i].label}", tilt
-                    ? new Color(0.45f, 0.42f, 0.38f)
-                    : new Color(0.55f, 0.6f, 0.45f));
-                card.rectTransform.SetSizeWithAnchors(new Vector2(x, y), new Vector2(125, 115));
-                if (tilt)
-                    card.rectTransform.localRotation = Quaternion.Euler(0, 0, i % 2 == 0 ? -8f : 8f);
-                if (!UI.ArtCatalog.TryAddIcon(card, UI.ArtCatalog.Ingredient, row[i].label))
-                    UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(115, 100), 26, row[i].label);
-                if (row[i].count > 1)
-                {
-                    var badge = UiKit.Label(card.transform, "Badge", new Vector2(0.85f, 0.85f), new Vector2(56, 32), 24,
-                        $"×{row[i].count}");
-                    badge.color = new Color(1f, 0.9f, 0.5f);
-                }
-                _items.Add(card.gameObject);
-            }
-        }
-
-        static string FormatDuration(float sec)
-        {
-            int s = Mathf.FloorToInt(sec);
-            return $"{s / 60}분 {s % 60}초";
+                _items.Add(ResultKit.MaterialItem(box, i, pitch, proper, row[i].label,
+                    ArtCatalog.Get(ArtCatalog.Ingredient, row[i].label), row[i].count));
         }
     }
 }

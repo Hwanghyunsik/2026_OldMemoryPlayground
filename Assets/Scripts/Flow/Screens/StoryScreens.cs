@@ -2,15 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Interaction;
 using Shinmyeong.Save;
+using Shinmyeong.UI;
 
 namespace Shinmyeong.Flow.Screens
 {
-    /// 간이 결과 공통 뼈대 (8-4 확정): 수치·버튼·일시정지 없음 · 수집물 순차 등장 ·
+    /// 간이 결과 공통 뼈대 (8-4 확정 · 시안 SCR-010/015/020): 수치·버튼·일시정지 없음 · 수집물 순차 등장 ·
     /// 응원 문구 + 다음 활동 예고 · 자동 진행 6초(기준안) · 남은 시간 숫자 금지 — 게이지로만.
-    /// 수집물 구분(v2.4 확정): 위 선반 = 제대로 담긴 것 / 아래 단 = 따로 담긴 것(기울여 배치) ·
+    /// 수집물 구분(v2.4 확정): 위 상자 = 제대로 담긴 것 / 아래 상자 = 다르게 담긴 것(기울여 배치) ·
     /// 종류 단위 묶음 + 개수 배지 · 라운드 번호 미표시. TTS 허용 — 음성 도입 시 여기서 재생.
-    /// 화면 자체는 게임별 독립 페이지(확정) — 파생 클래스가 문구·데이터·배색을 각자 정의한다.
+    /// 화면 자체는 게임별 독립 페이지(확정) — 파생 클래스가 문구·데이터·그림을 각자 정의한다.
     public abstract class StoryResultBase : ScreenBase
     {
         protected const float AutoSeconds = 6f; // 기준안 · 프로토타입 검증 후 조정
@@ -19,42 +21,49 @@ namespace Shinmyeong.Flow.Screens
         {
             public string Label;
             public int Count;    // 종류 묶음 개수 (1이면 배지 생략)
-            public bool Proper;  // true = 위 선반 / false = 아래 단(기울임)
+            public bool Proper;  // true = 위 상자 / false = 아래 상자(기울임)
         }
 
         Image _gaugeFill;
+        RectTransform _properBox;
+        RectTransform _otherBox;
         readonly List<GameObject> _items = new List<GameObject>();
 
-        protected abstract Color Background { get; }
-        protected abstract string TitleText { get; }    // 결과 상태 (8-6-1)
+        protected abstract string BackgroundSprite { get; }
+        protected abstract (string sprite, Rect rect) Title { get; }  // 결과 상태 간판 (8-6-1 문구가 그림에 포함)
+        protected abstract string ProperHeading { get; }
+        protected abstract string OtherHeading { get; }
         protected abstract string ConfirmText { get; }  // 확인 문구 (없으면 null)
         protected abstract string NextText { get; }     // 다음 단계 권유
         protected abstract ScreenId NextScreen { get; }
-        protected abstract string ArtCategory { get; } // 수집물 그림 분류 (Docs/92)
+        protected abstract string ArtCategory { get; }  // 수집물 그림 분류 (Docs/92)
+        protected virtual bool ShowNames => false;      // 음식은 이름표를 붙인다 (6-9)
         protected abstract List<Collectible> BuildCollectibles();
 
         protected override void BuildUi()
         {
-            UiKit.Panel(transform, "BG", Background);
-            UiKit.Label(transform, "Title", new Vector2(0.5f, 0.85f), new Vector2(1100, 90), 58, TitleText);
+            UiKit.Background(transform, BackgroundSprite);
+            var (sprite, rect) = Title;
+            UiKit.ImgFit(transform, "Title", sprite, rect.x, rect.y, rect.width, rect.height);
+
+            _properBox = UiKit.Frame(transform, "CollectedCrops", 98, 171, 1724, 303, Skin.Paper, Skin.Hex("c2b286", 0.88f));
+            UiKit.Txt(_properBox, "Heading", 33, 24, 400, 56, ProperHeading, 36, 7, Skin.Green, TextAnchor.MiddleLeft);
+            _otherBox = UiKit.Frame(transform, "DifferentCrops", 98, 488, 1724, 304, Skin.Paper, Skin.Hex("c2b286", 0.88f));
+            UiKit.Txt(_otherBox, "Heading", 36, 27, 400, 56, OtherHeading, 36, 7, Skin.Hex("b86a16"), TextAnchor.MiddleLeft);
+
+            var notice = UiKit.Node(transform, "NextStoryNotice", 509, 819, 902, 123);
+            UiKit.Img(notice, "Background", "Box-Round-15", 0, 0, 902, 123, Skin.Hex("362f2d", 0.9f), sliced: true);
             if (ConfirmText != null)
-                UiKit.Label(transform, "Confirm", new Vector2(0.5f, 0.76f), new Vector2(1000, 50), 34, ConfirmText);
+            {
+                UiKit.Txt(notice, "Heading", 40, 12, 822, 56, ConfirmText, 40, 7, Skin.Gold);
+                UiKit.Txt(notice, "Description", 40, 68, 822, 40, NextText, 28, 5, Skin.Cream);
+            }
+            else
+                UiKit.Txt(notice, "Heading", 40, 0, 822, 123, NextText, 40, 7, Skin.Gold);
 
-            // 위 선반 / 아래 단 — 위·아래 위치와 기울임으로만 구분 (텍스트·O/X·색상 단독 구분 금지)
-            UiKit.Panel(transform, "Shelf", new Color(1f, 1f, 1f, 0.10f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.545f), new Vector2(1080, 12));
-            UiKit.Panel(transform, "Ground", new Color(0f, 0f, 0f, 0.22f))
-                .rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.335f), new Vector2(1080, 12));
-
-            UiKit.Label(transform, "Next", new Vector2(0.5f, 0.23f), new Vector2(1000, 60), 40, NextText);
-            UiKit.Label(transform, "AutoInfo", new Vector2(0.5f, 0.135f), new Vector2(800, 40), 26, "잠시 후 다음 이야기가 이어져요");
-
-            var gaugeBg = UiKit.Panel(transform, "GaugeBg", new Color(1f, 1f, 1f, 0.15f));
-            gaugeBg.rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.09f), new Vector2(560, 16));
-            var fill = UiKit.Panel(gaugeBg.transform, "Fill", new Color(0.95f, 0.85f, 0.45f));
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Horizontal;
-            _gaugeFill = fill;
+            var progress = UiKit.Node(transform, "NextStoryProgress", 619, 968, 682, 74);
+            UiKit.Txt(progress, "Caption", 0, 0, 682, 39, "잠시 후 다음 이야기가 이어져요", 25, 6, Skin.Ink);
+            _gaugeFill = UiKit.Bar(progress, "Gauge", 0, 47, 682, 27, Skin.Track2, Skin.Navy, "TimeBar-Bg-02", "Circle-25");
         }
 
         protected override void OnEnter()
@@ -71,12 +80,13 @@ namespace Shinmyeong.Flow.Screens
         IEnumerator Run()
         {
             var list = BuildCollectibles();
-            BuildItemCards(list);
+            PlaceRow(_properBox, list.FindAll(c => c.Proper), proper: true);
+            PlaceRow(_otherBox, list.FindAll(c => !c.Proper), proper: false);
 
             // 수집물 순차 등장 (확정)
             foreach (var go in _items)
                 go.SetActive(false);
-            _gaugeFill.fillAmount = 1f;
+            UiKit.SetBar(_gaugeFill, 1f);
             foreach (var go in _items)
             {
                 go.SetActive(true);
@@ -86,42 +96,41 @@ namespace Shinmyeong.Flow.Screens
             float start = Time.time;
             while (Time.time - start < AutoSeconds)
             {
-                _gaugeFill.fillAmount = Mathf.Clamp01(1f - (Time.time - start) / AutoSeconds);
+                UiKit.SetBar(_gaugeFill, Mathf.Clamp01(1f - (Time.time - start) / AutoSeconds));
                 yield return null;
             }
             Flow.Go(NextScreen);
         }
 
-        void BuildItemCards(List<Collectible> list)
+        /// 178×178 카드 · 상자 안 x 33부터 185 간격(많으면 좁힌다) · y 98
+        void PlaceRow(RectTransform box, List<Collectible> row, bool proper)
         {
-            var proper = list.FindAll(c => c.Proper);
-            var other = list.FindAll(c => !c.Proper);
-            PlaceRow(proper, 0.615f, tilt: false);
-            PlaceRow(other, 0.405f, tilt: true);
-        }
-
-        void PlaceRow(List<Collectible> row, float y, bool tilt)
-        {
-            const float spacing = 0.085f;
+            float pitch = ResultKit.Pitch(row.Count, 1724 - 66, 178, 185);
             for (int i = 0; i < row.Count; i++)
             {
-                float x = 0.5f + (i - (row.Count - 1) * 0.5f) * spacing;
-                var card = UiKit.Panel(transform, $"Item_{row[i].Label}", tilt
-                    ? new Color(0.45f, 0.42f, 0.38f)
-                    : new Color(0.55f, 0.6f, 0.45f));
-                var rect = card.rectTransform;
-                rect.SetSizeWithAnchors(new Vector2(x, y), new Vector2(130, 120));
-                if (tilt)
-                    rect.localRotation = Quaternion.Euler(0, 0, i % 2 == 0 ? -8f : 8f);
-                if (!UI.ArtCatalog.TryAddIcon(card, ArtCategory, row[i].Label))
-                    UiKit.Label(card.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(120, 100), 28, row[i].Label);
-                if (row[i].Count > 1)
+                float x = 33 + i * pitch;
+                var card = UiKit.Node(box, $"Item{i + 1}", x, 98, 178, 178);
+                UiKit.Img(card, "Face", "Box-Round-23", 1, 1, 175, 175, Skin.Face, sliced: true);
+                UiKit.Img(card, "Outline", "Box-Round-23-Outline", 1, 1, 175, 175, Skin.Outline, sliced: true);
+                var art = ArtCatalog.Get(ArtCategory, row[i].Label);
+                if (art != null)
                 {
-                    var badge = UiKit.Label(card.transform, "Badge", new Vector2(0.85f, 0.85f), new Vector2(60, 34), 24,
-                        $"×{row[i].Count}");
-                    badge.color = new Color(1f, 0.9f, 0.5f);
+                    var icon = UiKit.ImgFit(card, "Crop", null, 22, ShowNames ? 16 : 22, 134, ShowNames ? 112 : 134);
+                    icon.sprite = art;
+                }
+                else
+                    UiKit.Txt(card, "Label", 10, 10, 158, ShowNames ? 110 : 158, row[i].Label, 28, 6, Skin.Brown);
+                if (ShowNames)
+                    UiKit.Txt(card, "FoodName", 9, 132, 160, 32, row[i].Label, 26, 6, Skin.Hex("3b2917"));
+                if (!proper)
+                {
+                    UiKit.PlaceCentered(card, x, 98, 178, 178);
+                    card.localRotation = Quaternion.Euler(0, 0, i % 2 == 0 ? 5f : -5f);
                 }
                 _items.Add(card.gameObject);
+                // 개수 배지는 맨 위 층(Badges)에 두어 다음 카드에 가려지지 않게 한다 (카드가 촘촘할 때)
+                if (row[i].Count > 1)
+                    _items.Add(UiKit.Badge(ResultKit.BadgeLayer(box), $"Quantity{i + 1}", x + 135, 98 - 14, 49, row[i].Count, Skin.Green, 33).transform.parent.gameObject);
             }
         }
 
@@ -141,17 +150,19 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// SCR-010 수확하기 간이 결과
+    /// SCR-010 수확하기 간이 결과 — 「바구니가 가득 찼어요」
     public class HarvestStoryResultScreen : StoryResultBase
     {
         public static PlayRecord LastPlay;
 
-        protected override Color Background => new Color(0.13f, 0.16f, 0.11f);
-        protected override string TitleText => "바구니가 가득 찼어요";
+        protected override string BackgroundSprite => "SCR-008-Bg";
+        protected override (string, Rect) Title => ("SCR-010-Title", new Rect(467, 40, 908, 132));
+        protected override string ProperHeading => "바구니에 담은 것";
+        protected override string OtherHeading => "다르게 담긴 것";
         protected override string ConfirmText => "필요한 재료가 모였어요";
         protected override string NextText => "이제 시장에 다녀올까요?";
         protected override ScreenId NextScreen => ScreenId.SCR_011;
-        protected override string ArtCategory => UI.ArtCatalog.CropLaid;
+        protected override string ArtCategory => ArtCatalog.CropLaid;
 
         protected override List<Collectible> BuildCollectibles()
         {
@@ -163,17 +174,19 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// SCR-015 장보기 간이 결과 — 장바구니에 준비된 재료 + 다음 요리 단계 예고
+    /// SCR-015 장보기 간이 결과 — 「장바구니가 묵직졌어요」 + 다음 요리 단계 예고
     public class ShoppingStoryResultScreen : StoryResultBase
     {
         public static PlayRecord LastPlay;
 
-        protected override Color Background => new Color(0.15f, 0.14f, 0.11f);
-        protected override string TitleText => "장바구니가 묵직해졌어요";
+        protected override string BackgroundSprite => "SCR-013-Bg";
+        protected override (string, Rect) Title => ("SCR-015-Title", new Rect(445, 40, 953, 139));
+        protected override string ProperHeading => "장바구니에 담은 것";
+        protected override string OtherHeading => "다르게 담긴 것";
         protected override string ConfirmText => "필요한 것을 다 담았어요";
         protected override string NextText => "이제 부엌으로 가 볼까요?";
         protected override ScreenId NextScreen => ScreenId.SCR_016;
-        protected override string ArtCategory => UI.ArtCatalog.Ingredient;
+        protected override string ArtCategory => ArtCatalog.Ingredient;
 
         protected override List<Collectible> BuildCollectibles()
         {
@@ -185,18 +198,21 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// SCR-020 요리하기 간이 결과 — 완성한 음식(음식 단위 10개 · 6-9-6) + 잔치상 단계 예고.
-    /// 완성 음식 이미지는 간이 결과에서 사용 가능(6-7 확정) — 자산 도입 시 카드에 적용
+    /// SCR-020 요리하기 간이 결과 — 「음식이 다 되었어요」 · 완성 음식(음식 단위 10개 · 6-9-6) + 잔치상 단계 예고.
+    /// 완성 음식 이미지는 간이 결과에서 사용 가능(6-7 확정)
     public class CookingStoryResultScreen : StoryResultBase
     {
         public static PlayRecord LastPlay;
 
-        protected override Color Background => new Color(0.16f, 0.13f, 0.11f);
-        protected override string TitleText => "음식이 다 되었어요";
+        protected override string BackgroundSprite => "SCR-017-Bg";
+        protected override (string, Rect) Title => ("SCR-020-Title", new Rect(517, 40, 808, 143));
+        protected override string ProperHeading => "완성된 음식";
+        protected override string OtherHeading => "재료가 달랐던 음식";
         protected override string ConfirmText => null; // 8-6-1 확정 문구는 2단 구조
         protected override string NextText => "이제 상을 차려 볼까요?";
         protected override ScreenId NextScreen => ScreenId.SCR_021;
-        protected override string ArtCategory => UI.ArtCatalog.Food;
+        protected override string ArtCategory => ArtCatalog.Food;
+        protected override bool ShowNames => true;
 
         protected override List<Collectible> BuildCollectibles()
         {
@@ -214,26 +230,25 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// SCR-022 최종 잔치상 (9-1~9-4 확정).
+    /// SCR-022 최종 잔치상 (9-1~9-4 확정 · 시안 SCR-022).
     /// 판정: 3게임 성공 합 ÷ 30 → 2단계 65% · 3단계 85%(기준값 · ADM 조정 가능하게 설계 — ADM 구현 시 연결).
-    /// 단계 차이는 양이 아니라 화려함 · 단계 명칭은 화면에 표시하지 않는다 · 낮은 단계도 상은 가득 차 있다.
+    /// 단계 차이는 양이 아니라 화려함(잔치상 그림 3종 · 문구는 그림에 포함) · 단계 명칭은 화면에 표시하지 않는다.
     public class FeastScreen : ScreenBase
     {
         const float AutoReturnSeconds = 15f;   // 기준값 · ADM 조정 가능하게 설계
         const float Stage2Threshold = 0.65f;   // 기준값
         const float Stage3Threshold = 0.85f;   // 기준값
 
-        static readonly string[] StageMent =
+        static readonly string[] TableSprites = { "SCR-022-Table-01", "SCR-022-Table-02", "SCR-022-Table-03" };
+        /// 단계별 문구 (그림에 포함 · TTS 도입 시 읽어 준다): 정성이 담긴 상 / 이웃과 나눌 만한 상 / 온 동네가 모일 잔치상
+        public static readonly string[] StageMent =
         {
             "정성이 담긴 상이 차려졌어요",
             "이웃과 나눌 만한 상이 되었어요",
             "온 동네가 모일 잔치상이 되었어요",
         };
 
-        Text _ment;
         Image _table;
-        readonly List<Image> _dishes = new List<Image>();
-        readonly List<GameObject> _garnish = new List<GameObject>();
         Text[] _successTexts;
         Image _gaugeFill;
         GameObject _gaugeRoot;
@@ -242,53 +257,38 @@ namespace Shinmyeong.Flow.Screens
 
         protected override void BuildUi()
         {
-            UiKit.Panel(transform, "BG", new Color(0.14f, 0.11f, 0.10f));
-            UiKit.Label(transform, "Title", new Vector2(0.5f, 0.88f), new Vector2(1000, 90), 60, "잔치가 열렸어요");
+            UiKit.Background(transform, "SCR-022-Bg");
+            UiKit.ImgFit(transform, "Title", "SCR-022-Title", 550, 50, 742, 143);
 
-            // 잔치상 — 항상 가득 찬 상차림 (X-Box 플레이스홀더 · 자산 도입 시 3단계 일러스트로 교체)
-            _table = UiKit.Panel(transform, "Table", new Color(0.45f, 0.3f, 0.2f));
-            _table.rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.585f), new Vector2(900, 300));
-            for (int i = 0; i < 6; i++)
-            {
-                var dish = UiKit.Panel(_table.transform, $"Dish_{i}", Color.white);
-                dish.rectTransform.SetSizeWithAnchors(
-                    new Vector2(0.14f + 0.144f * i, i % 2 == 0 ? 0.62f : 0.34f), new Vector2(110, 96));
-                _dishes.Add(dish);
-                // 고명(2단계+)·특별 장식(3단계) 자리 — 단계 명칭·등급 표기는 두지 않는다
-                var deco = UiKit.Label(dish.transform, "Deco", new Vector2(0.5f, 0.82f), new Vector2(90, 30), 22, "✿");
-                deco.color = new Color(1f, 0.75f, 0.4f);
-                deco.gameObject.SetActive(false);
-                _garnish.Add(deco.gameObject);
-            }
-
-            _ment = UiKit.Label(transform, "Ment", new Vector2(0.5f, 0.38f), new Vector2(1000, 60), 42, "");
+            var panel = UiKit.Img(transform, "ResultPanel", "SCR-022-Box", 348, 138, 1221, 816);
+            _table = UiKit.ImgFit(panel.transform, "FeastTable", TableSprites[0], 80, 70, 1057, 387);
 
             // 하단: 게임 3종 성공 횟수 n / 10 — 퍼센트·평균·등급 표시 금지 (확정)
-            string[] names = { "수확하기", "장보기", "요리하기" };
             _successTexts = new Text[3];
-            for (int i = 0; i < 3; i++)
-            {
-                var card = UiKit.Panel(transform, $"Success_{i}", new Color(1f, 1f, 1f, 0.08f));
-                card.rectTransform.SetSizeWithAnchors(new Vector2(0.38f + 0.12f * i, 0.27f), new Vector2(200, 90));
-                UiKit.Label(card.transform, "Name", new Vector2(0.5f, 0.72f), new Vector2(180, 34), 24, names[i]);
-                _successTexts[i] = UiKit.Label(card.transform, "Value", new Vector2(0.5f, 0.3f), new Vector2(180, 44), 34, "");
-            }
+            _successTexts[0] = ActivityCard(panel.transform, 100, "Icon-Harvest", "Icon-Harvest-Text", 132, Skin.GreenDeep);
+            _successTexts[1] = ActivityCard(panel.transform, 446, "Icon-Shopping", "Icon-Shopping-Text", 104, Skin.Orange);
+            _successTexts[2] = ActivityCard(panel.transform, 792, "Icon-Cooking", "Icon-Cooking-Text", 132, Skin.Purple);
 
-            // 버튼 2종 — 처음 화면으로(좌 · 주 CTA) · 내 기록 보기(우) · 안전 영역 안 (확정 9-3)
-            UiKit.Button(transform, "Home", new Vector2(0.42f, 0.145f), new Vector2(300, 100),
-                "처음 화면으로", () => Flow.Go(ScreenId.SCR_004), color: new Color(0.3f, 0.6f, 0.35f));
-            _recordsButton = UiKit.Button(transform, "Records", new Vector2(0.6f, 0.145f), new Vector2(280, 95),
-                "내 기록 보기", OpenRecords).gameObject;
+            _gaugeRoot = UiKit.Node(panel.transform, "ReturnGauge", 353, 658, 562, 78).gameObject;
+            UiKit.Txt(_gaugeRoot.transform, "ReturnNotice", 0, 0, 562, 45, "잠시 후 처음 화면으로 돌아가요", 25, 4, Skin.BrownDark);
+            _gaugeFill = UiKit.Bar(_gaugeRoot.transform, "Gauge", 0, 60, 562, 18, Skin.Track3, Skin.Green, "TimeBar", "TimeBar");
 
-            var gaugeBg = UiKit.Panel(transform, "GaugeBg", new Color(1f, 1f, 1f, 0.15f));
-            gaugeBg.rectTransform.SetSizeWithAnchors(new Vector2(0.5f, 0.055f), new Vector2(560, 16));
-            var fill = UiKit.Panel(gaugeBg.transform, "Fill", new Color(0.95f, 0.85f, 0.45f));
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Horizontal;
-            _gaugeFill = fill;
-            _gaugeRoot = gaugeBg.gameObject;
-            UiKit.Label(_gaugeRoot.transform, "AutoInfo", new Vector2(0.5f, -1.2f), new Vector2(800, 34), 24,
-                "잠시 후 처음 화면으로 돌아가요"); // 게이지와 함께 숨겨진다
+            // 버튼 2종 — 처음 화면으로(좌) · 내 기록 보기(우 · 비회원 미표시) (확정 9-3)
+            UiKit.NavButton(transform, "HomeButton", 121, 477, "처음으로", "Icon-Home", () => Flow.Go(ScreenId.SCR_004))
+                .gameObject.AddComponent<SafeAreaExempt>().Reason = "디자인 시안 배치(좌측 끝) — 2-4 안전 영역 밖 · 기획 확인 대기(Q5)";
+            var records = UiKit.NavButton(transform, "RecordsButton", 1655, 478, "내 기록 보기", "Icon-Record", OpenRecords, labelSize: 21);
+            records.gameObject.AddComponent<SafeAreaExempt>().Reason = "디자인 시안 배치(우측 끝) — 2-4 안전 영역 밖 · 기획 확인 대기(Q5)";
+            _recordsButton = records.gameObject;
+        }
+
+        static Text ActivityCard(Transform parent, float x, string icon, string label, float labelW, Color color)
+        {
+            var card = UiKit.Card(parent, icon, x, 484, 333, 163, Skin.Face, color);
+            UiKit.ImgFit(card, "ActivityIcon", icon, 24, 21, 126, 124);
+            UiKit.ImgFit(card, "ActivityTitle", label, 169 + (132 - labelW) * 0.5f, 19, labelW, 50);
+            var value = UiKit.Txt(card, "Value", 120, 65, 115, 79, "", 60, 7, color, TextAnchor.MiddleRight);
+            UiKit.Txt(card, "Total", 240, 90, 62, 48, "/10", 30, 5, Skin.Muted, TextAnchor.MiddleLeft);
+            return value;
         }
 
         protected override void OnEnter()
@@ -299,10 +299,11 @@ namespace Shinmyeong.Flow.Screens
             float ratio = (harvest + shopping + cooking) / 30f;
             int stage = ratio >= Stage3Threshold ? 3 : ratio >= Stage2Threshold ? 2 : 1;
 
-            ApplyStage(stage);
-            _successTexts[0].text = $"{harvest} / 10";
-            _successTexts[1].text = $"{shopping} / 10";
-            _successTexts[2].text = $"{cooking} / 10";
+            // 양이 아니라 화려함의 차이 — 그림만 바뀐다 (단계 명칭 미표시)
+            _table.sprite = Skin.Sprite(TableSprites[stage - 1]);
+            _successTexts[0].text = harvest.ToString();
+            _successTexts[1].text = shopping.ToString();
+            _successTexts[2].text = cooking.ToString();
 
             // 스토리 모드의 유일한 기록 진입점 — 비회원에게는 버튼 자체를 표시하지 않는다 (확정)
             _recordsButton.SetActive(!Flow.IsGuest);
@@ -321,20 +322,6 @@ namespace Shinmyeong.Flow.Screens
 
         int Success(string activity) => Flow.StorySuccess.TryGetValue(activity, out var n) ? n : 0;
 
-        void ApplyStage(int stage)
-        {
-            _ment.text = StageMent[stage - 1];
-            // 양이 아니라 화려함의 차이 — 접시 수는 같고 색·장식만 달라진다
-            _table.color = stage >= 3 ? new Color(0.55f, 0.35f, 0.18f)
-                : stage == 2 ? new Color(0.5f, 0.33f, 0.2f) : new Color(0.45f, 0.3f, 0.2f);
-            for (int i = 0; i < _dishes.Count; i++)
-            {
-                _dishes[i].color = stage >= 3 ? new Color(1f, 0.95f, 0.75f)
-                    : stage == 2 ? new Color(0.95f, 0.92f, 0.85f) : new Color(0.88f, 0.86f, 0.82f);
-                _garnish[i].SetActive(stage >= 2 && (stage >= 3 || i % 2 == 0));
-            }
-        }
-
         void OpenRecords()
         {
             // 기록을 읽는 도중 화면이 넘어가지 않게 게이지를 정지 (확정)
@@ -352,7 +339,7 @@ namespace Shinmyeong.Flow.Screens
             float start = Time.time;
             while (Time.time - start < AutoReturnSeconds)
             {
-                _gaugeFill.fillAmount = Mathf.Clamp01(1f - (Time.time - start) / AutoReturnSeconds);
+                UiKit.SetBar(_gaugeFill, Mathf.Clamp01(1f - (Time.time - start) / AutoReturnSeconds));
                 yield return null;
             }
             Flow.Go(ScreenId.SCR_004);

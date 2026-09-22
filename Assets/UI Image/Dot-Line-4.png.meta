@@ -1,0 +1,189 @@
+fileFormatVersion: 2
+guid: a7ed673c79cc5ec46bd61c7dd7ce5d96
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3133629724978342724
+    second: Dot-Line-4_0
+  - first:
+      213: 4686777211669144231
+    second: Dot-Line-4_1
+  - first:
+      213: -7490690053499966553
+    second: Dot-Line-4_2
+  - first:
+      213: -4578719720455164465
+    second: Dot-Line-4_3
+  - first:
+      213: -7118670957472538289
+    second: Dot-Line-4_4
+  - first:
+      213: -1295153575644009427
+    second: Dot-Line-4_5
+  - first:
+      213: 6740005436745533981
+    second: Dot-Line-4_6
+  - first:
+      213: -1630943681419146871
+    second: Dot-Line-4_7
+  - first:
+      213: -6014414847144853398
+    second: Dot-Line-4_8
+  - first:
+      213: 5447690409419758216
+    second: Dot-Line-4_9
+  - first:
+      213: 9131498487554938190
+    second: Dot-Line-4_10
+  - first:
+      213: -1395517079711894701
+    second: Dot-Line-4_11
+  - first:
+      213: 4413932278019574441
+    second: Dot-Line-4_12
+  - first:
+      213: 4208025711129757127
+    second: Dot-Line-4_13
+  - first:
+      213: -5396840148191814838
+    second: Dot-Line-4_14
+  - first:
+      213: -8838897054613060979
+    second: Dot-Line-4_15
+  - first:
+      213: -56348113928362174
+    second: Dot-Line-4_16
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 14, y: 14, z: 18, w: 18}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 62a4925f70f43bc4aa70a71906f69248
+    internalID: -1058010861
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceOnImport
+        value: False
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      Dot-Line-4_0: 3133629724978342724
+      Dot-Line-4_1: 4686777211669144231
+      Dot-Line-4_10: 9131498487554938190
+      Dot-Line-4_11: -1395517079711894701
+      Dot-Line-4_12: 4413932278019574441
+      Dot-Line-4_13: 4208025711129757127
+      Dot-Line-4_14: -5396840148191814838
+      Dot-Line-4_15: -8838897054613060979
+      Dot-Line-4_16: -56348113928362174
+      Dot-Line-4_2: -7490690053499966553
+      Dot-Line-4_3: -4578719720455164465
+      Dot-Line-4_4: -7118670957472538289
+      Dot-Line-4_5: -1295153575644009427
+      Dot-Line-4_6: 6740005436745533981
+      Dot-Line-4_7: -1630943681419146871
+      Dot-Line-4_8: -6014414847144853398
+      Dot-Line-4_9: 5447690409419758216
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

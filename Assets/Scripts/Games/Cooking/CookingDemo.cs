@@ -2,17 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Flow;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Cooking
 {
-    /// 요리하기 정식 게임 루프 (그래픽은 X-Box 플레이스홀더 — 자산 도입 시 교체).
+    /// 요리하기 정식 게임 루프 (무대 그림은 시안 SCR-018: 재료 카드 3×2 · 담은 재료 칸 · 레시피 기억 팝업).
     /// 힌트 유효 행동(C4): 재료 선택 확정만 타이머를 리셋한다(3-2 현재 기준) — 손 이동·호버는 리셋 없음.
     /// 04 게임구성표 확정 레시피 10종 고정 순서 · 재료 풀 22종.
     /// 규칙(07 문서 6장):
-    ///   레시피 기억(SCR-018-1): 불투명 차폐 · 공개 게이지(1개 3.5s/2개 5s/3개 6.5s) ·
+    ///   레시피 기억(SCR-018-1): 재료 칸을 덮는 팝업 · 공개 게이지(1개 3.5s/2개 5s/3개 6.5s) ·
     ///     자동으로 닫히지 않고 「다 외웠어요」(dwell 2초)로만 닫힘
     ///   재료 선택(SCR-018): 후보 6칸(3×2) · dwell 1~2초(기준안 1.5) · 취소·교체 없음 ·
     ///     슬롯이 다 차면 일괄 판정 · 색상 계열로만 구분(부정 기호 금지)
@@ -62,9 +63,11 @@ namespace Shinmyeong.Games.Cooking
             public string Item;
             public bool IsAnswer;
             public bool Picked;
-            public Image Panel;
+            public RectTransform Root;
+            public Image Face;
+            public Image Border;
+            public Image HintBorder;
             public DwellTarget Target;
-            public Color BaseColor;
         }
 
         RectTransform _stageRoot;
@@ -72,13 +75,16 @@ namespace Shinmyeong.Games.Cooking
         GameObject _candRoot;
         GameObject _slotRoot;
         readonly List<Candidate> _cands = new List<Candidate>();
-        readonly List<Image> _slotPanels = new List<Image>();
+        readonly List<Image> _slotFaces = new List<Image>();
+        readonly List<Image> _slotIcons = new List<Image>();
         readonly List<Text> _slotTexts = new List<Text>();
         GameObject _reviewButton;
 
         GameObject _popup;
-        Text _popupFood;
-        Text _popupItems;
+        Image _popupFood;
+        Text _popupFoodName;
+        Text _popupHeading;
+        RectTransform _popupItems;
         Image _gaugeFill;
         GameObject _memorizedButton;
 
@@ -95,11 +101,11 @@ namespace Shinmyeong.Games.Cooking
         float _startTime;
         PlayRecord _play;
 
-        static readonly Color CandNormal = new Color(0.32f, 0.36f, 0.42f);
-        static readonly Color CandPicked = new Color(0.5f, 0.5f, 0.55f);
-        static readonly Color CandHint = new Color(0.85f, 0.75f, 0.3f);
-        static readonly Color JudgeCorrect = new Color(0.32f, 0.62f, 0.38f);
-        static readonly Color JudgeOther = new Color(0.78f, 0.52f, 0.28f);
+        // 카드 상태 색 (색상 계열로만 구분 · 6-8)
+        static readonly Color FaceNormal = Skin.Face;
+        static readonly Color BorderNormal = Skin.Hex("c2b286", 0.5f);
+        static readonly Color FacePicked = Skin.Hex("e9e3d5");
+        static readonly Color BorderPicked = Skin.Hex("b5a67d");
 
         public void Begin(RectTransform host)
         {
@@ -107,11 +113,7 @@ namespace Shinmyeong.Games.Cooking
 
             var rootGo = new GameObject("CookingStage");
             rootGo.transform.SetParent(host, false);
-            var rect = rootGo.AddComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.sizeDelta = Vector2.zero;
-            _stageRoot = rect;
+            _stageRoot = UiKit.Stretch(rootGo);
 
             BuildStage();
             _records.Clear();
@@ -125,7 +127,8 @@ namespace Shinmyeong.Games.Cooking
         {
             StopAllCoroutines();
             _cands.Clear();
-            _slotPanels.Clear();
+            _slotFaces.Clear();
+            _slotIcons.Clear();
             _slotTexts.Clear();
             if (_stageRoot != null)
             {
@@ -136,66 +139,60 @@ namespace Shinmyeong.Games.Cooking
 
         void BuildStage()
         {
-            // 공통 HUD — 목표 패널(음식 이름만 · 완성 음식 이미지는 플레이 중 금지 6-7)·경과 시간·진행 레일.
-            // 레시피 팝업(불투명 차폐)이 나중에 조립되어 HUD 위를 덮는다
-            _hud = PlayHud.Create(_stageRoot);
+            _candRoot = UiKit.Group(_stageRoot, "IngredientCards").gameObject;
 
-            _slotRoot = new GameObject("Slots");
-            _slotRoot.transform.SetParent(_stageRoot, false);
-            StretchRect(_slotRoot);
+            // 담은 재료 칸 — 하단 초록 알약 (x656 y814 610×138)
+            var slots = UiKit.Node(_stageRoot, "CollectedIngredients", 656, 814, 610, 138);
+            UiKit.Img(slots, "Pill", "Box-Round-38", 0, 0, 610, 138, Skin.Hex("2f5d49"), sliced: true);
+            UiKit.Img(slots, "LabelBackground", "Box-Round-15", 52, 38, 157, 62, Skin.Outline2, sliced: true);
+            UiKit.Txt(slots, "Label", 52, 38, 157, 62, "담은 재료", 30, 7, Skin.Green);
+            _slotRoot = slots.gameObject;
 
-            _candRoot = new GameObject("Candidates");
-            _candRoot.transform.SetParent(_stageRoot, false);
-            StretchRect(_candRoot);
-
-            // 차림표 다시 보기 — dwell 3초(UI 버튼)
-            var review = CreatePanel(_stageRoot, "ReviewButton", new Color(0.35f, 0.42f, 0.55f));
-            var reviewRect = review.rectTransform;
-            // 안전 영역(2-4 · x420~) 안으로 — 하단 좌측, 일시정지(중앙)와 나란히
-            reviewRect.anchorMin = reviewRect.anchorMax = new Vector2(0.28f, 0.15f);
-            reviewRect.sizeDelta = new Vector2(210, 100);
-            CreateText(review.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(200, 90), 28, "차림표\n다시 보기");
-            var reviewTarget = review.gameObject.AddComponent<DwellTarget>();
-            reviewTarget.Selected += _ => _reviewRequested = true;
+            // 차림표 다시 보기 — 왼쪽 받침 아래 칸 (x63 y589 160×157 · 초록) · dwell 3초(UI 버튼)
+            var review = UiKit.Node(_stageRoot, "RecipeButton", 63, 589, 160, 157);
+            UiKit.Img(review, "Background", "Bt-Round-Green-02", 0, 0, 157, 157, Color.white, sliced: true);
+            UiKit.ImgFit(review, "Icon", "Icon-Record", 60, 25, 36, 38, Color.white);
+            UiKit.Txt(review, "Label", 5, 70, 150, 72, "차림표\n다시 보기", 23, 7, Color.white);
+            UiKit.Dwell(review, 160, 157, 3f, () => _reviewRequested = true, withText: false)
+                .gameObject.AddComponent<SafeAreaExempt>().Reason = "디자인 시안 배치(좌측) — 2-4 안전 영역 밖 · 기획 확인 대기(Q5)";
             _reviewButton = review.gameObject;
 
-            BuildPopup();
+            // 공통 HUD — 목표 패널(음식 이름만 · 완성 음식 이미지는 플레이 중 금지 6-7)·경과 시간·진행 레일
+            _hud = PlayHud.Create(_stageRoot);
+
+            BuildPopup(); // 팝업이 마지막에 조립되어 재료 칸·버튼 위를 덮는다
         }
 
         void BuildPopup()
         {
-            var popup = CreatePanel(_stageRoot, "RecipePopup", new Color(0.13f, 0.12f, 0.16f, 1f)); // 불투명 차폐 (필수)
-            StretchRect(popup.gameObject);
+            var popup = UiKit.Node(_stageRoot, "RecipePopup", 343, 237, 1146, 756);
             _popup = popup.gameObject;
+            UiKit.Img(popup, "Background", "SCR-018-Popup-Bg", -2, 11, 1150, 733, Color.white, sliced: true);
 
-            CreateText(_popup.transform, "Caption", new Vector2(0.5f, 0.82f), new Vector2(800, 50), 30, "만들 음식과 재료를 봐 주세요");
-            _popupFood = CreateText(_popup.transform, "Food", new Vector2(0.5f, 0.68f), new Vector2(800, 90), 60, "");
-            _popupItems = CreateText(_popup.transform, "Items", new Vector2(0.5f, 0.5f), new Vector2(900, 100), 44, "");
+            // 이번에 준비할 음식 — 음식 그림(팝업에서는 허용 · 6-7) + 이름
+            UiKit.Img(popup, "FoodPanel", "Box-Round-23", 70, 121, 660, 198, Skin.Hex("fff8e9"), sliced: true);
+            UiKit.ImgFit(popup, "Title", "SCR-018-Popup-Title", 203, 76, 395, 78);
+            _popupFood = UiKit.ImgFit(popup, "Food", null, 309, 143, 183, 138);
+            UiKit.Img(popup, "FoodNameBackground", "Box-Round-20", 334, 258, 132, 40, Skin.Hex("38210c"), sliced: true);
+            _popupFoodName = UiKit.Txt(popup, "FoodName", 334, 257, 132, 42, "", 27, 7, Color.white);
 
-            // 공개 시간 게이지 — 버튼 바로 위 (남은 시간 표시 · 끝나도 닫히지 않음)
-            var gaugeBg = CreatePanel(_popup.transform, "GaugeBg", new Color(0.3f, 0.3f, 0.35f));
-            var gaugeBgRect = gaugeBg.rectTransform;
-            gaugeBgRect.anchorMin = gaugeBgRect.anchorMax = new Vector2(0.5f, 0.3f);
-            gaugeBgRect.sizeDelta = new Vector2(640, 26);
-            var fill = CreatePanel(gaugeBg.transform, "Fill", new Color(0.95f, 0.8f, 0.35f));
-            var fillRect = fill.rectTransform;
-            fillRect.anchorMin = Vector2.zero;
-            fillRect.anchorMax = Vector2.one;
-            fillRect.sizeDelta = Vector2.zero;
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Horizontal;
-            _gaugeFill = fill;
-
-            // 「다 외웠어요」 — 팝업 중앙 하단 · dwell 2초 (확정)
-            var btn = CreatePanel(_popup.transform, "Memorized", new Color(0.3f, 0.6f, 0.4f));
-            var btnRect = btn.rectTransform;
-            btnRect.anchorMin = btnRect.anchorMax = new Vector2(0.5f, 0.18f);
-            btnRect.sizeDelta = new Vector2(440, 96);
-            CreateText(btn.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(420, 80), 36, "다 외웠어요");
-            var btnTarget = btn.gameObject.AddComponent<DwellTarget>();
-            btnTarget.SetDwellSeconds(2f);
-            btnTarget.Selected += _ => _memorized = true;
+            // 「다 외웠어요」 — dwell 2초 (확정) + 공개 시간 게이지 (끝나도 닫히지 않음)
+            var btn = UiKit.Node(popup, "MemorizedButton", 777, 113, 291, 137);
+            UiKit.Img(btn, "Background", "Bt-Round-Green-02", 0, 0, 291, 137, Color.white, sliced: true);
+            UiKit.ImgFit(btn, "Check", "Icon-Check-02", 118, 24, 54, 44, Color.white);
+            UiKit.Txt(btn, "Label", 20, 66, 251, 53, "다 외웠어요", 30, 7, Color.white);
+            UiKit.Dwell(btn, 291, 137, 2f, () => _memorized = true, withText: false);
             _memorizedButton = btn.gameObject;
+            _gaugeFill = UiKit.Bar(popup, "Progress", 779, 279, 290, 18, Skin.Track3, Skin.Hex("365e49"), "TimeBar", "TimeBar");
+
+            // 필요한 재료 N개 + 점선 상자 안 재료 카드
+            var leafL = UiKit.ImgFit(popup, "LeftLeaf", "Icon-Leaf", 244, 392, 42, 40);
+            leafL.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+            leafL.rectTransform.anchoredPosition += new Vector2(42, 0);
+            _popupHeading = UiKit.Txt(popup, "IngredientHeading", 286, 386, 243, 55, "", 31, 6, Skin.Hex("39230f"));
+            UiKit.ImgFit(popup, "RightLeaf", "Icon-Leaf", 529, 392, 42, 40);
+            UiKit.ImgFit(popup, "DashedBorder", "Dot-Line-3-02", 58, 451, 685, 226);
+            _popupItems = UiKit.Node(popup, "Foods", 58, 473, 685, 183);
 
             _popup.SetActive(false);
         }
@@ -217,7 +214,6 @@ namespace Shinmyeong.Games.Cooking
         {
             var recipe = Recipes[round - 1];
             _hud.SetRound(round); // 라운드 표시는 HUD 진행 레일 하나뿐 (중복 배치 금지)
-            _hud.SetGoal($"「{recipe.Food}」에 넣을 재료를 골라 주세요"); // 8-6-1 확정 문구
 
             BuildCandidates(recipe);
             BuildSlots(recipe.Answers.Length);
@@ -262,13 +258,14 @@ namespace Shinmyeong.Games.Cooking
             {
                 if (!cand.Picked)
                     continue;
-                cand.Panel.color = cand.IsAnswer ? JudgeCorrect : JudgeOther;
+                cand.Face.color = cand.IsAnswer ? Skin.ProperCard : Skin.OtherCard;
+                cand.Border.color = cand.IsAnswer ? Skin.ProperOutline : Skin.OtherOutline;
                 parts.Add($"{cand.Item}({(cand.IsAnswer ? "맞음" : "다름")})");
             }
             for (int i = 0; i < _picks.Count; i++)
             {
                 bool isAnswer = System.Array.IndexOf(recipe.Answers, _picks[i]) >= 0;
-                _slotPanels[i].color = isAnswer ? JudgeCorrect : JudgeOther;
+                _slotFaces[i].color = isAnswer ? Skin.ProperCard : Skin.OtherCard;
             }
 
             _records.Add($"R{round}: {recipe.Food} · [{string.Join(", ", parts)}] · {roundTime:F1}s · 다시보기 {reviewCount}회 · 힌트 {hintCount}회");
@@ -302,11 +299,18 @@ namespace Shinmyeong.Games.Cooking
         IEnumerator ShowPopup(Recipe recipe, bool firstTime)
         {
             _popupOpen = true;
-            _candRoot.SetActive(false); // 불투명 차폐 뒤 재료는 보이지도, 선택되지도 않는다
+            _candRoot.SetActive(false); // 차폐 뒤 재료는 보이지도, 선택되지도 않는다
             _reviewButton.SetActive(false);
             _popup.SetActive(true);
-            _popupFood.text = recipe.Food;
-            _popupItems.text = string.Join("   ", recipe.Answers);
+            _hud.SetGoal("필요한 재료를 기억해 주세요");
+
+            _popupFoodName.text = recipe.Food;
+            var foodArt = ArtCatalog.Get(ArtCatalog.Food, recipe.Food);
+            _popupFood.gameObject.SetActive(foodArt != null);
+            if (foodArt != null)
+                _popupFood.sprite = foodArt;
+            _popupHeading.text = $"필요한 재료 {recipe.Answers.Length}개";
+            BuildPopupItems(recipe.Answers);
             _memorizedButton.SetActive(firstTime);
             _memorized = false;
 
@@ -317,7 +321,7 @@ namespace Shinmyeong.Games.Cooking
             float start = Time.time;
             while (firstTime ? !_memorized : Time.time - start < duration)
             {
-                _gaugeFill.fillAmount = Mathf.Clamp01(1f - (Time.time - start) / duration);
+                UiKit.SetBar(_gaugeFill, Mathf.Clamp01(1f - (Time.time - start) / duration));
                 yield return null;
             }
 
@@ -325,6 +329,26 @@ namespace Shinmyeong.Games.Cooking
             _candRoot.SetActive(true);
             _reviewButton.SetActive(true);
             _popupOpen = false;
+            _hud.SetGoal($"「<color=#{ColorUtility.ToHtmlStringRGB(Skin.Green)}>{recipe.Food}</color>」에 넣을 재료를 골라 주세요"); // 8-6-1 확정 문구
+        }
+
+        void BuildPopupItems(string[] answers)
+        {
+            for (int i = _popupItems.childCount - 1; i >= 0; i--)
+                Destroy(_popupItems.GetChild(i).gameObject);
+            int n = answers.Length;
+            float total = n * 190 + (n - 1) * 30;
+            float start = (685 - total) * 0.5f;
+            for (int i = 0; i < n; i++)
+            {
+                var card = UiKit.Node(_popupItems, $"Food{i + 1}", start + i * 220, 0, 190, 183);
+                UiKit.Img(card, "Face", "Box-Round-23", -4, -1, 198, 186, Skin.Cream, sliced: true);
+                UiKit.Img(card, "Outline", "Box-Round-23-Outline", -4, -1, 198, 186, Skin.Hex("decba7"), sliced: true);
+                var art = ArtCatalog.Get(ArtCatalog.Ingredient, answers[i]);
+                if (art != null)
+                    UiKit.ImgFit(card, "Food", null, 42, 22, 107, 95).sprite = art;
+                UiKit.Txt(card, "Label", 10, 127, 170, 46, answers[i], 30, 7, Skin.Hex("39230f"));
+            }
         }
 
         void BuildCandidates(Recipe recipe)
@@ -347,27 +371,34 @@ namespace Shinmyeong.Games.Cooking
             }
             Shuffle(chosen);
 
-            float[] xs = { 0.36f, 0.5f, 0.64f };
-            float[] ys = { 0.52f, 0.29f };
+            // 3×2 카드 243×243 (시안 IngredientCards · x 560/838/1117 · y 275/534)
+            float[] xs = { 560, 838, 1117 };
+            float[] ys = { 275, 534 };
             for (int i = 0; i < 6; i++)
             {
-                var panel = CreatePanel(_candRoot.transform, $"Cand_{chosen[i]}", CandNormal);
-                var rect = panel.rectTransform;
-                rect.anchorMin = rect.anchorMax = new Vector2(xs[i % 3], ys[i / 3]);
-                rect.sizeDelta = new Vector2(180, 150);
-                // 재료 그림이 있으면 아이콘으로 — 칸 색은 뒤에 남아 판정·힌트 색 표현 유지 (Docs/92)
-                if (!ArtCatalog.TryAddIcon(panel, ArtCatalog.Ingredient, chosen[i]))
-                    CreateText(panel.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(170, 130), 34, chosen[i]);
+                var card = UiKit.Node(_candRoot.transform, $"Cand_{chosen[i]}", xs[i % 3], ys[i / 3], 243, 243);
+                UiKit.Img(card, "Frame", "Box-Round-28", 0, 0, 243, 243, Color.white, sliced: true);
+                var face = UiKit.Img(card, "Face", "Box-Round-23", 7, 8, 228, 228, FaceNormal, sliced: true);
+                var border = UiKit.Img(card, "Border", "Box-Round-23-Outline", 7, 8, 228, 228, BorderNormal, sliced: true);
+                var hint = UiKit.Img(card, "HintBorder", "Box-Round-23-Outline-8", 0, 0, 243, 243, Skin.Gold, sliced: true);
+                hint.gameObject.SetActive(false);
+                var art = ArtCatalog.Get(ArtCatalog.Ingredient, chosen[i]);
+                if (art != null)
+                    UiKit.ImgFit(card, "Food", null, 45, 27, 153, 150).sprite = art;
+                else
+                    UiKit.Txt(card, "Placeholder", 20, 40, 203, 130, chosen[i], 34, 6, Skin.Muted);
+                UiKit.Txt(card, "Label", 7, 183, 228, 48, chosen[i], 30, 6, Skin.BrownDark);
 
-                var target = panel.gameObject.AddComponent<DwellTarget>();
-                target.SetDwellSeconds(_pickDwellSeconds); // 요리 재료 1~2초 기준안 (C3)
+                var target = UiKit.Dwell(card, 243, 243, _pickDwellSeconds, null); // 요리 재료 1~2초 기준안 (C3)
                 var cand = new Candidate
                 {
                     Item = chosen[i],
                     IsAnswer = System.Array.IndexOf(recipe.Answers, chosen[i]) >= 0,
-                    Panel = panel,
+                    Root = card,
+                    Face = face,
+                    Border = border,
+                    HintBorder = hint,
                     Target = target,
-                    BaseColor = CandNormal,
                 };
                 target.Selected += _ => OnPick(cand);
                 _cands.Add(cand);
@@ -376,29 +407,39 @@ namespace Shinmyeong.Games.Cooking
 
         void BuildSlots(int count)
         {
+            // 담은 재료 칸: 흰 원(채움) / 점선 원(빈 칸) · 3칸 자리 x 244·367·489
             for (int i = 0; i < count; i++)
             {
-                float x = 0.5f + (i - (count - 1) * 0.5f) * 0.1f;
-                var slot = CreatePanel(_slotRoot.transform, $"Slot_{i}", new Color(0.22f, 0.24f, 0.28f));
-                var rect = slot.rectTransform;
-                rect.anchorMin = rect.anchorMax = new Vector2(x, 0.76f);
-                rect.sizeDelta = new Vector2(130, 100);
-                _slotPanels.Add(slot);
-                _slotTexts.Add(CreateText(slot.transform, "Label", new Vector2(0.5f, 0.5f), new Vector2(120, 90), 28, ""));
+                var face = UiKit.Img(_slotRoot.transform, $"Slot{i + 1}", "Dot-Line-Circle", 244 + i * 123, 20, 96, 96, Color.white);
+                var icon = UiKit.ImgFit(face.transform, "Food", null, 14, 18, 69, 60);
+                icon.gameObject.SetActive(false);
+                var text = UiKit.Txt(face.transform, "Label", 0, 0, 96, 96, "", 22, 6, Skin.BrownDark);
+                _slotFaces.Add(face);
+                _slotIcons.Add(icon);
+                _slotTexts.Add(text);
             }
         }
 
         void OnPick(Candidate cand)
         {
-            if (_popupOpen || cand.Picked || _picks.Count >= _slotPanels.Count)
+            if (_popupOpen || cand.Picked || _picks.Count >= _slotFaces.Count)
                 return;
 
             // 담기는 순간에는 정답 여부와 무관하게 담긴다 (확정 6-8-1) · 취소·교체 없음
             cand.Picked = true;
-            cand.Panel.color = CandPicked;
+            cand.Face.color = FacePicked;
+            cand.Border.color = BorderPicked;
             cand.Target.enabled = false;
-            if (!ArtCatalog.TryAddIcon(_slotPanels[_picks.Count], ArtCatalog.Ingredient, cand.Item))
-                _slotTexts[_picks.Count].text = cand.Item;
+            int slot = _picks.Count;
+            UiKit.Apply(_slotFaces[slot], "Circle-125");
+            var art = ArtCatalog.Get(ArtCatalog.Ingredient, cand.Item);
+            if (art != null)
+            {
+                _slotIcons[slot].sprite = art;
+                _slotIcons[slot].gameObject.SetActive(true);
+            }
+            else
+                _slotTexts[slot].text = cand.Item;
             _picks.Add(cand.Item);
             if (_firstPickSec < 0f)
                 _firstPickSec = Time.time - _roundT0; // 반응 시간 — 정답 여부 무관, 첫 선택 확정 시점(18-4)
@@ -407,7 +448,10 @@ namespace Shinmyeong.Games.Cooking
             if (_hinted != null && _hinted != cand)
                 ClearHint();
             else if (_hinted == cand)
+            {
+                cand.HintBorder.gameObject.SetActive(false);
                 _hinted = null;
+            }
             _nextHintAt = Time.time + _hintIntervalSeconds;
         }
 
@@ -423,7 +467,7 @@ namespace Shinmyeong.Games.Cooking
                     if (cand.Item == answer && !cand.Picked)
                     {
                         _hinted = cand;
-                        cand.Panel.color = CandHint; // 지속 유지 — 점멸 후 사라지지 않는다
+                        cand.HintBorder.gameObject.SetActive(true); // 지속 유지 — 점멸 후 사라지지 않는다
                         return;
                     }
                 }
@@ -432,21 +476,22 @@ namespace Shinmyeong.Games.Cooking
 
         void ClearHint()
         {
-            if (_hinted != null && !_hinted.Picked)
-                _hinted.Panel.color = _hinted.BaseColor;
+            if (_hinted != null && _hinted.HintBorder != null)
+                _hinted.HintBorder.gameObject.SetActive(false);
             _hinted = null;
         }
 
         void ClearRound()
         {
             foreach (var cand in _cands)
-                if (cand.Panel != null)
-                    Destroy(cand.Panel.gameObject);
+                if (cand.Root != null)
+                    Destroy(cand.Root.gameObject);
             _cands.Clear();
-            foreach (var slot in _slotPanels)
+            foreach (var slot in _slotFaces)
                 if (slot != null)
                     Destroy(slot.gameObject);
-            _slotPanels.Clear();
+            _slotFaces.Clear();
+            _slotIcons.Clear();
             _slotTexts.Clear();
             _hinted = null;
         }
@@ -458,45 +503,6 @@ namespace Shinmyeong.Games.Cooking
                 int j = _rng.Next(i + 1);
                 (list[i], list[j]) = (list[j], list[i]);
             }
-        }
-
-        // ---- UI 헬퍼 ----
-
-        static void StretchRect(GameObject go)
-        {
-            var rect = go.GetComponent<RectTransform>();
-            if (rect == null)
-                rect = go.AddComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.sizeDelta = Vector2.zero;
-        }
-
-        Image CreatePanel(Transform parent, string name, Color color)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var img = go.AddComponent<Image>();
-            img.color = color;
-            img.raycastTarget = false;
-            return img;
-        }
-
-        Text CreateText(Transform parent, string name, Vector2 anchor, Vector2 size, int fontSize, string content)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var text = go.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.text = content;
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.sizeDelta = size;
-            return text;
         }
     }
 }
