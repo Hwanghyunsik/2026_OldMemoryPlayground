@@ -124,7 +124,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.Tracking.TrackingDebugView
   _service: {fileID: 0}
-  _visible: 1
+  _visible: 0
   _previewHeight: 240
 --- !u!114 &965559066500273591
 MonoBehaviour:

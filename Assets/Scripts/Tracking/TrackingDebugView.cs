@@ -7,7 +7,7 @@ namespace Shinmyeong.Tracking
     public class TrackingDebugView : MonoBehaviour
     {
         [SerializeField] BodyTrackingService _service;
-        [SerializeField] bool _visible = true;
+        [SerializeField] bool _visible = false; // 기본 숨김 — F1로 켠다 (2026-09-22)
         [SerializeField] float _previewHeight = 240f;
 
         static readonly Color HandColor = new Color(1f, 0.85f, 0.1f);
