@@ -113,11 +113,12 @@ namespace Shinmyeong.Games.Harvest
             _glow = UiKit.Img(_stageRoot, "TargetGlow", "SCR-013-Light", 0, 0, 420, 420).rectTransform;
             _glow.pivot = new Vector2(0.5f, 0.5f);
             _glow.gameObject.SetActive(false);
-            _cropsRoot = UiKit.Group(_stageRoot, "HarvestMaterials");
 
-            // 바구니 (하단 중앙 · 시안 HarvestBasket)
+            // 바구니 (하단 중앙 · 시안 HarvestBasket) — 작물보다 먼저 만들어 작물이 바구니 앞에 그려진다(담김 연출)
             UiKit.Img(_stageRoot, "BasketShadow", "Circle-125", 788, 964, 329, 70, Skin.Hex("402108", 0.3f));
             _basketImage = UiKit.ImgFit(_stageRoot, "Basket", "Basket", 784, 769, 353, 260);
+
+            _cropsRoot = UiKit.Group(_stageRoot, "HarvestMaterials");
 
             _hud = PlayHud.Create(_stageRoot); // 공통 HUD — 목표 패널·경과 시간·진행 레일 (2-5 확정)
         }
@@ -271,7 +272,14 @@ namespace Shinmyeong.Games.Harvest
                 UiKit.Txt(go.transform, "Label", 0, 0, CropW, CropH, kind == Kind.Bug ? $"{name}\n(벌레)" : name, 30, 6, Color.white);
             }
             if (bugFallback)
-                UiKit.ImgFit(go.transform, "Bug", "Bug", CropW - 70, CropH - 80, 60, 60);
+            {
+                // 비율 유지로 축소된 실제 그림 영역을 구해 그 오른쪽 아래에 벌레를 붙인다 (사각형 기준이면 공중에 뜬다)
+                var sp = img.sprite;
+                float scale = Mathf.Min(CropW / sp.rect.width, CropH / sp.rect.height);
+                float drawnW = sp.rect.width * scale, drawnH = sp.rect.height * scale;
+                float left = (CropW - drawnW) * 0.5f, top = (CropH - drawnH) * 0.5f;
+                UiKit.ImgFit(go.transform, "Bug", "Bug", left + drawnW * 0.62f, top + drawnH * 0.55f, 60, 60);
+            }
 
             go.AddComponent<PullTarget>();
             return new Crop
