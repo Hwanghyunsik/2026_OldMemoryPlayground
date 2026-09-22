@@ -17,7 +17,7 @@ namespace Shinmyeong.Games.Shopping
     ///   점포 풀 4종이 서로 겹치지 않아 자동 충족
     ///   목표 발판 무작위 제약: 라운드 내 중복 금지 · 외곽 최대 1 · 외곽↔외곽 연속 금지
     /// 판정(07 문서 5-8): 도착만 판정(ArrivalJudge) · 다른 점포 정지 = 그대로 구매(실패 없음)
-    ///   · 구매 후 중앙 장바구니 복귀로 목표 1건 완료 · 이미 구매한 점포 재판정 제외
+    ///   · 구매 후 중앙 장바구니 복귀로 목표 1건 완료 · 같은 점포 중복 구매 허용(Q4 결정 2026-09-22 — 5-8 「재판정 제외」 폐기)
     /// 힌트(5-8-1 · C4 기준안): 10초 무활동 시 이동 유도 — 유의미한 몸 이동(임계 이상 변위)은
     ///   유효 행동으로 타이머 리셋 · 제자리 흔들림은 리셋하지 않음
     public class ShoppingDemo : MonoBehaviour
@@ -356,8 +356,8 @@ namespace Shinmyeong.Games.Shopping
                         int z = _arrivals.Dequeue();
                         if (z == ZoneC || !activeStoreZones.Contains(z))
                             continue;
-                        if (_stores[z].Purchased)
-                            continue; // 같은 라운드 이미 구매한 점포 재판정 제외 (확정)
+                        // 이미 구매한 점포도 다시 판정한다 (2026-09-22 결정 · Q4): 「이미 구매한 점포 재판정 제외」(5-8)를
+                        // 그대로 두면 나중 목표 점포를 먼저 산 뒤 그 점포가 점등됐을 때 진행이 막힌다(소프트락)
                         boughtZone = z;
                         break;
                     }
