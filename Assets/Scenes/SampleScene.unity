@@ -262,6 +262,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.UI.HandCursorUI
   Side: 0
   _image: {fileID: 0}
+  _handPrefab: {fileID: 8592560539155835957, guid: f87b82bdf8036134fba272eeb662d048, type: 3}
+  _handLift: 35
 --- !u!114 &49355000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1019,6 +1021,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.UI.HandCursorUI
   Side: 1
   _image: {fileID: 0}
+  _handPrefab: {fileID: 8592560539155835957, guid: f87b82bdf8036134fba272eeb662d048, type: 3}
+  _handLift: 35
 --- !u!114 &1354314903
 MonoBehaviour:
   m_ObjectHideFlags: 0

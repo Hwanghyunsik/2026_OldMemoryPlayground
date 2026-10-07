@@ -46,7 +46,19 @@ namespace Shinmyeong.Flow
                 Instance = null;
         }
 
-        void Start() => Go(ScreenId.SCR_001);
+        /// 개발용: 실행 인자 `-screen SCR_006`으로 시작 화면을 바로 지정한다(빌드에서 영상·화면 단독 확인용).
+        /// 인자가 없으면 정상 흐름(SCR-001)으로 시작한다.
+        void Start()
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+                if (args[i] == "-screen" && System.Enum.TryParse(args[i + 1], out ScreenId start))
+                {
+                    Go(start);
+                    return;
+                }
+            Go(ScreenId.SCR_001);
+        }
 
         void BuildScreens()
         {

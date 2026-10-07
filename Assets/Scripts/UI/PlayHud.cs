@@ -52,14 +52,20 @@ namespace Shinmyeong.UI
             // 진행 레일 (x1752 y255 122×705) — 1이 위
             var rail = UiKit.Node(transform, "StageProgress", 1752, 255, 122, 705);
             UiKit.Img(rail, "Frame", "Box-Round-28", 0, 0, 122, 705, Color.white, sliced: true);
-            UiKit.Img(rail, "Face", "Box-Round-23", 4, 5, 113, 695, Skin.Paper, sliced: true);
-            UiKit.Img(rail, "Outline", "Box-Round-23-Outline", 4, 5, 113, 695, Skin.Outline, sliced: true);
+            // 시안 좌표는 안쪽 면이 0.5px 왼쪽, 칸 묶음이 2.5px 위로 치우쳐(위 여백 22 · 아래 27) 우상단으로 쏠려 보였다 → 정중앙 배치
+            const float FaceX = (122f - 113f) * 0.5f, FaceY = 5f, FaceH = 695f;
+            const float CellSize = 55f, CellPitch = 65.7f;
+            float cellTop = FaceY + (FaceH - (CellPitch * 9f + CellSize)) * 0.5f;
+            float cellX = FaceX + (113f - CellSize) * 0.5f;
+            UiKit.Img(rail, "Face", "Box-Round-23", FaceX, FaceY, 113, FaceH, Skin.Paper, sliced: true);
+            UiKit.Img(rail, "Outline", "Box-Round-23-Outline", FaceX, FaceY, 113, FaceH, Skin.Outline, sliced: true);
             for (int i = 0; i < 10; i++)
             {
-                float y = 27f + i * 65.7f;
-                var cell = UiKit.Img(rail, $"Stage{i + 1}", "Circle-52", 33, y, 55, 55, CellFuture);
+                float y = cellTop + i * CellPitch;
+                var cell = UiKit.Img(rail, $"Stage{i + 1}", "Circle-52", cellX, y, CellSize, CellSize, CellFuture);
                 _cells[i] = cell;
-                _cellTexts[i] = UiKit.Txt(cell.transform, "Number", 0, 0, 55, 55, (i + 1).ToString(), 30, 6, Skin.Muted);
+                _cellTexts[i] = UiKit.Txt(cell.transform, "Number", 0, 0, CellSize, CellSize, (i + 1).ToString(), 30, 6, Skin.Muted);
+                _cellTexts[i].alignByGeometry = true; // 폰트 기준선 대신 글자 모양으로 원 정중앙에 맞춘다 (숫자가 위로 뜨지 않게)
             }
 
             _clockStart = Time.time;

@@ -29,6 +29,10 @@ namespace Shinmyeong.UI
 
         public bool HasClip => _player != null && _player.clip != null;
 
+        /// 개발용: 실행 인자 `-videolog`면 재생 진행(프레임·재생 위치·시계)을 0.5초마다 로그로 남긴다 — 밀림·멈춤 진단
+        static readonly bool LogProgress = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-videolog") >= 0;
+        float _nextLogAt;
+
         /// mask = 영상이 보일 둥근 모양 Image (Mask를 붙인다) · 그 크기에 맞춰 영상을 꽉 채운다
         public static VideoView Create(Image mask, float aspect = 16f / 9f)
         {
@@ -59,12 +63,13 @@ namespace Shinmyeong.UI
                 return false;
             }
             EnsurePlayer();
+            // 처음부터 재생 — Stop이 위치를 0으로 되돌린다
+            _player.Stop();
             _player.clip = clip;
             _player.isLooping = loop;
-            _player.time = 0;
-            _image.enabled = false; // 첫 프레임 전 검은/이전 화면이 비치지 않게
-            _player.sendFrameReadyEvents = true;
-            _player.Prepare();
+            ClearTexture(); // 이전 영상의 마지막 장면이 비치지 않게 창 색으로 지운다
+            _image.enabled = true;
+            _player.Play(); // 준비가 안 됐으면 준비 후 첫 프레임이 나오면 시작 (waitForFirstFrame)
             return true;
         }
 
@@ -86,15 +91,15 @@ namespace Shinmyeong.UI
             _player = gameObject.AddComponent<VideoPlayer>();
             _player.playOnAwake = false;
             _player.waitForFirstFrame = true;
-            _player.skipOnDrop = true;
+            // 프레임 건너뛰기는 끈다 — waitForFirstFrame과 함께 켜면 첫 재생이 0프레임에 멈추고 시계만 흐른다
+            // (빌드 실측 · 반복 2회차부터는 정상이라 「영상이 밀린다」로 보였음). 끄면 화면과 소리가 정확히 맞는다
+            _player.skipOnDrop = false;
             _player.renderMode = VideoRenderMode.RenderTexture;
             _player.targetTexture = _texture;
             _player.aspectRatio = VideoAspectRatio.FitOutside;
             _player.audioOutputMode = VideoAudioOutputMode.Direct;
             // 화면을 소리(오디오 DSP 시계)에 맞춘다 — 게임 시간 기준이면 프레임이 끊길 때 화면만 늦어져 소리와 밀린다
             _player.timeUpdateMode = VideoTimeUpdateMode.DSPTime;
-            _player.prepareCompleted += p => p.Play();
-            _player.frameReady += OnFirstFrame;
             _player.loopPointReached += _ =>
             {
                 if (!_player.isLooping)
@@ -103,10 +108,20 @@ namespace Shinmyeong.UI
             _player.errorReceived += (_, message) => Debug.LogWarning($"[VideoView] 재생 오류: {message}");
         }
 
-        void OnFirstFrame(VideoPlayer p, long frame)
+        void Update()
         {
-            _image.enabled = true;
-            p.sendFrameReadyEvents = false; // 첫 프레임만 필요 — 매 프레임 이벤트 비용을 끈다
+            if (!LogProgress || _player == null || _player.clip == null || Time.unscaledTime < _nextLogAt)
+                return;
+            _nextLogAt = Time.unscaledTime + 0.5f;
+            Debug.Log($"[VideoLog] {_player.clip.name} frame={_player.frame}/{_player.frameCount} time={_player.time:F2} clock={_player.clockTime:F2} playing={_player.isPlaying} fps={1f / Time.unscaledDeltaTime:F0}");
+        }
+
+        void ClearTexture()
+        {
+            var prev = RenderTexture.active;
+            RenderTexture.active = _texture;
+            GL.Clear(false, true, Skin.Hex("2d2926"));
+            RenderTexture.active = prev;
         }
 
         void OnDisable() => Stop();
