@@ -27,12 +27,16 @@ namespace Shinmyeong.Interaction
 
         void OnDisable() => Active.Remove(this);
 
-        /// Screen Space Overlay 전제 — 월드 코너가 곧 화면 좌표다
+        /// 화면 픽셀 사각형 — 캔버스가 Screen Space Camera면 그 카메라로 월드 코너를 화면 좌표로 바꾼다
         Rect GetScreenRect()
         {
             var corners = new Vector3[4];
             _rect.GetWorldCorners(corners);
-            return new Rect(corners[0].x, corners[0].y, corners[2].x - corners[0].x, corners[2].y - corners[0].y);
+            var canvas = _rect.GetComponentInParent<Canvas>();
+            var cam = canvas != null ? UI.UiCamera.Of(canvas) : null;
+            Vector2 min = RectTransformUtility.WorldToScreenPoint(cam, corners[0]);
+            Vector2 max = RectTransformUtility.WorldToScreenPoint(cam, corners[2]);
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         }
 
         public bool ContainsEntry(Vector2 screenPos)

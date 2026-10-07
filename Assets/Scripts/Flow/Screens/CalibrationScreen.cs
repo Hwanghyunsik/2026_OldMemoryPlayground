@@ -46,8 +46,7 @@ namespace Shinmyeong.Flow.Screens
             var header = UiKit.HeaderPaper(transform);
             UiKit.ImgFit(header, "Title", "SCR-002-Title-Text", 357, 48, 470, 50);
             var leafL = UiKit.ImgFit(header, "LeafLeft", "Icon-Leaf", 302, 53, 37, 42);
-            leafL.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
-            leafL.rectTransform.anchoredPosition += new Vector2(37, 0);
+            leafL.rectTransform.localScale = new Vector3(-1f, 1f, 1f); // 중심 피벗이라 제자리 뒤집기
             UiKit.ImgFit(header, "LeafRight", "Icon-Leaf", 841, 52, 36, 41);
             UiKit.Txt(header, "Subtitle", 0, 114, 1184, 28, "화면 속 사각형 안에 온 몸이 들어오도록 서 주세요.", 28, 5, Skin.Brown);
 

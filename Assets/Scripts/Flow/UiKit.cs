@@ -37,6 +37,17 @@ namespace Shinmyeong.Flow
             return rect;
         }
 
+        /// 화면 위치는 그대로 두고 피벗만 바꾼다 (anchoredPosition은 피벗 변화량 × sizeDelta 만큼 보정).
+        /// preserveAspect 그림은 남는 여백을 피벗 기준으로 정렬하므로, 비율 유지 그림은 반드시 중심 피벗이어야
+        /// 세로로 긴 그림이 왼쪽, 가로로 긴 그림이 위로 쏠리지 않는다
+        public static RectTransform SetPivot(RectTransform rect, Vector2 pivot)
+        {
+            var delta = pivot - rect.pivot;
+            rect.anchoredPosition += new Vector2(delta.x * rect.sizeDelta.x, delta.y * rect.sizeDelta.y);
+            rect.pivot = pivot;
+            return rect;
+        }
+
         /// 중심 피벗 배치 (회전·확대 연출용) — 좌표는 여전히 왼쪽 위 기준 x, y, w, h
         public static RectTransform PlaceCentered(RectTransform rect, float x, float y, float w, float h)
         {
@@ -76,11 +87,12 @@ namespace Shinmyeong.Flow
             return img;
         }
 
-        /// 비율 유지 그림 (일러스트·아이콘)
+        /// 비율 유지 그림 (일러스트·아이콘) — 중심 피벗이라 좌우 뒤집기(localScale -1)도 제자리에서 된다
         public static Image ImgFit(Transform parent, string name, string sprite, float x, float y, float w, float h, Color? color = null)
         {
             var img = Img(parent, name, sprite, x, y, w, h, color);
             img.preserveAspect = true;
+            SetPivot(img.rectTransform, new Vector2(0.5f, 0.5f));
             return img;
         }
 

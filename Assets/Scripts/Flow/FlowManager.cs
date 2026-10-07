@@ -55,27 +55,27 @@ namespace Shinmyeong.Flow
             Add<UserSelectScreen>(ScreenId.SCR_003);
             Add<ModeSelectScreen>(ScreenId.SCR_004);
             Add<LobbyScreen>(ScreenId.SCR_005);
-            Add<VideoPlaceholderScreen>(ScreenId.SCR_006).Setup("SCR-006-Title", new Rect(805, 88, 310, 65), ScreenId.SCR_007);
+            Add<StoryVideoScreen>(ScreenId.SCR_006).Setup("SCR-006-Title", new Rect(805, 88, 310, 65), "1.오프닝", ScreenId.SCR_007);
             // 튜토리얼 단계 문구·삽화는 시안(SCR-007/012/017) 기준 — 「양발 고정 · 체중 싣기」류 표현 금지(설계서)
             Add<GameTutorialScreen>(ScreenId.SCR_007).Setup("SCR-007-Title", 192, "SCR-007-Bg", new[]
             {
                 new TutorialStep("손을 올립니다", "거두고 싶은 것 위에", "SCR-007-Sequence-01"),
                 new TutorialStep("아래로 당깁니다", "천천히 내리면 됩니다", "SCR-007-Sequence-02"),
                 new TutorialStep("바구니에 담깁니다", "소리로 알려 드립니다", "SCR-007-Sequence-03"),
-            }, ScreenId.SCR_008);
+            }, "튜토리얼게임1", ScreenId.SCR_008);
             Add<HarvestPlayScreen>(ScreenId.SCR_008);
             Add<ResultScreen>(ScreenId.SCR_009);
-            Add<VideoPlaceholderScreen>(ScreenId.SCR_011).Setup("SCR-011_Title", new Rect(828, 88, 265, 65), ScreenId.SCR_012);
+            Add<StoryVideoScreen>(ScreenId.SCR_011).Setup("SCR-011_Title", new Rect(828, 88, 265, 65), "2.연결연출1", ScreenId.SCR_012);
             Add<GameTutorialScreen>(ScreenId.SCR_012).Setup("SCR-012-Title", 143, "SCR-013-Bg", new[]
             {
                 new TutorialStep("빛나는 발판을 봅니다", "위쪽 재료와 같은 자리입니다", "Icon-Step"),
                 new TutorialStep("그쪽으로 옮겨 갑니다", "지나가는 자리는 괜찮습니다", "Icon-GranMa"),
                 new TutorialStep("그 자리에서 잠시 멈춥니다", "재료를 담아 드립니다", "Icon-GranMa-02"),
                 new TutorialStep("가운데로 돌아옵니다", "장바구니에 담깁니다", "Icon-GranMa"),
-            }, ScreenId.SCR_013);
+            }, "튜토리얼게임2", ScreenId.SCR_013);
             Add<ShoppingPlayScreen>(ScreenId.SCR_013);
             Add<ShoppingResultScreen>(ScreenId.SCR_014);
-            Add<VideoPlaceholderScreen>(ScreenId.SCR_016).Setup("SCR-016-Title", new Rect(740, 90, 441, 85), ScreenId.SCR_017);
+            Add<StoryVideoScreen>(ScreenId.SCR_016).Setup("SCR-016-Title", new Rect(740, 90, 441, 85), "3.연결연출2", ScreenId.SCR_017);
             // 「외우지 않아도 괜찮아요」를 1단계에 — 기억 부담 불안을 먼저 낮춘다 (설계서)
             Add<GameTutorialScreen>(ScreenId.SCR_017).Setup("SCR-017-title", 192, "SCR-017-Bg", new[]
             {
@@ -83,10 +83,10 @@ namespace Shinmyeong.Flow
                 new TutorialStep("재료 위에 손을 올립니다", "여섯 가지 중에서 고릅니다"),
                 new TutorialStep("동그라미가 다 차면 담깁니다", "소리로 알려 드립니다"),
                 new TutorialStep("다시 보기를 쓸 수 있습니다", "차림표를 다시 보여 드립니다"),
-            }, ScreenId.SCR_018);
+            }, "튜토리얼게임3", ScreenId.SCR_018);
             Add<CookingPlayScreen>(ScreenId.SCR_018);
             Add<CookingResultScreen>(ScreenId.SCR_019);
-            Add<VideoPlaceholderScreen>(ScreenId.SCR_021).Setup("SCR-021-Title", new Rect(780, 88, 361, 66), ScreenId.SCR_022);
+            Add<StoryVideoScreen>(ScreenId.SCR_021).Setup("SCR-021-Title", new Rect(780, 88, 361, 66), "4.엔딩", ScreenId.SCR_022);
 
             Add<HarvestStoryResultScreen>(ScreenId.SCR_010);
             Add<ShoppingStoryResultScreen>(ScreenId.SCR_015);

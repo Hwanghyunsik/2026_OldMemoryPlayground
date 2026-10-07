@@ -37,10 +37,15 @@ namespace Shinmyeong.Interaction
             IsArmed = true;
         }
 
+        /// uiCamera는 대상 캔버스를 찾지 못할 때만 쓴다 — 게임 UI(Screen Space Camera)와 팝업(Overlay)이 섞여 있어
+        /// 대상마다 자기 루트 캔버스의 카메라로 판정한다
         public bool ContainsScreenPoint(Vector2 screenPos, Camera uiCamera)
         {
             if (_rect == null)
                 return false;
+            var canvas = _rect.GetComponentInParent<Canvas>();
+            if (canvas != null)
+                uiCamera = UI.UiCamera.Of(canvas);
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_rect, screenPos, uiCamera, out var local))
                 return false;
             var r = _rect.rect;

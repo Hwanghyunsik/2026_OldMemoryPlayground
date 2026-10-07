@@ -21,11 +21,12 @@ namespace Shinmyeong.Games.Harvest
         [SerializeField] float _hintIntervalSeconds = 10f;
 
         static readonly string[] CropNames = { "호박", "오이", "가지", "토마토", "고추", "대추", "감", "밤" };
-        // 넝쿨·나무 그림 4종을 자리마다 번갈아 건다 (폭 · 시안 HarvestPlants)
+        // 넝쿨·나무 그림 6종을 자리마다 번갈아 건다 (폭 · 시안 HarvestPlants + 2026-09-23 추가 수령 Tree/Vine-03)
         static readonly (string sprite, float w, float h)[] Plants =
         {
             ("SCR-008-Tree-01", 265, 567), ("SCR-008-Vine-01", 147, 570),
             ("SCR-008-Tree-02", 262, 563), ("SCR-008-Vine-02", 174, 575),
+            ("SCR-008-Tree-03", 262, 560), ("SCR-008-Vine-03", 151, 573),
         };
         const float SlotLeft = 570f, SlotRight = 1330f;   // 작물 자리 중심 x 범위 (시안 4자리 기준)
         const float CropTop = 390f, CropW = 200f, CropH = 240f;
@@ -58,6 +59,7 @@ namespace Shinmyeong.Games.Harvest
         readonly List<string> _records = new List<string>();
         readonly Dictionary<string, int> _targetUseCount = new Dictionary<string, int>(); // 같은 작물 한 판 2회 이하 (확정)
         PullTarget _pulledTarget;
+        GameObject _targetEffect;
         readonly System.Random _rng = new System.Random();
         bool _subscribed;
 
@@ -109,7 +111,7 @@ namespace Shinmyeong.Games.Harvest
         void BuildStage()
         {
             _plantsRoot = UiKit.Group(_stageRoot, "HarvestPlants");
-            // 목표 강조 빛 (작물 뒤)
+            // 목표 강조 빛 (작물 뒤) — 디자이너 이펙트(P_TargetPoint_Game1)가 없을 때만 쓰는 대체 그림
             _glow = UiKit.Img(_stageRoot, "TargetGlow", "SCR-013-Light", 0, 0, 420, 420).rectTransform;
             _glow.pivot = new Vector2(0.5f, 0.5f);
             _glow.gameObject.SetActive(false);
@@ -201,6 +203,7 @@ namespace Shinmyeong.Games.Harvest
             if (PullJudge.Instance != null)
                 PullJudge.Instance.JudgingEnabled = false;
             float reaction = Time.time - t0;
+            EffectKit.Stop(ref _targetEffect);
 
             var pulled = _crops.Find(c => c.Go == _pulledTarget.gameObject);
             string result = pulled.Kind == Kind.Target ? "정답" : pulled.Kind == Kind.Bug ? "벌레" : "다른 선택";
@@ -282,6 +285,7 @@ namespace Shinmyeong.Games.Harvest
             }
 
             go.AddComponent<PullTarget>();
+            EffectKit.KeepInFront(go); // 목표 강조·담김 이펙트는 작물 그림 뒤로 (튜토리얼 영상)
             return new Crop
             {
                 Kind = kind,
@@ -295,8 +299,11 @@ namespace Shinmyeong.Games.Harvest
 
         IEnumerator Highlight(Crop target)
         {
+            // 목표 강조 이펙트(빛 테 + 퍼지는 빛 · 튜토리얼 영상과 같은 연출) — 한 주기 재생, 당기면 바로 지운다
+            EffectKit.Stop(ref _targetEffect);
+            _targetEffect = EffectKit.Play(EffectKit.HarvestTarget, target.Rect);
             _glow.anchoredPosition = new Vector2(target.Center.x, -target.Center.y);
-            _glow.gameObject.SetActive(true);
+            _glow.gameObject.SetActive(_targetEffect == null);
             _glow.SetAsFirstSibling();
             _plantsRoot.SetAsFirstSibling();
             float t = 0f;
@@ -316,6 +323,7 @@ namespace Shinmyeong.Games.Harvest
         {
             var from = crop.Center;
             var to = BasketCenter + new Vector2(0f, -30f);
+            EffectKit.Play(EffectKit.HarvestGet, crop.Rect); // 담김 반짝임 — 작물을 따라 바구니로 간다
             float t = 0f;
             const float duration = 0.7f;
             while (t < duration)

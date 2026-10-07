@@ -2,6 +2,50 @@
 
 > 룰: CLAUDE.md 「작업 기록」 참조. 최신 날짜가 위로 오게 기록한다.
 
+## 2026-10-07
+
+### 포커스가 빠져도 계속 실행 — Run In Background 켬
+- `ProjectSettings` Player 「Run In Background」 0→1 (사용자 요청). 빌드는 창 포커스를 잃어도 게임·영상이 계속 돈다. 에디터에서도 영상이 포커스 이탈 시 일시정지(paused)되던 현상 사라짐
+- 에디터 한계(프로젝트 설정으로 못 고침): 비포커스 에디터는 갱신이 초당 5~7회로 제한되고 영상 디코딩이 멈춤(시계는 가는데 화면이 0프레임에 머묾 — 게임 시간·오디오 시계 둘 다 동일). 에디터 Interaction Mode 「No Throttling」·EditorApplication.update 틱 요청도 시험했으나 효과 없어 원복·삭제. → 영상 밀림 확인은 Unity 창을 앞에 둔 상태나 빌드에서 해야 함
+
+### 이펙트 그리기 순서 수정 · 영상 밀림 대응
+- 이펙트가 물건 그림 앞에 그려지던 문제(사용자 지적) — 파티클(sortingOrder 1~3)이 UICanvas(0) 전체 위에 그려졌기 때문. `UI/InFrontOfEffects.cs`(자체 정렬 캔버스 order 10 · 활성화 때마다 재적용 — 비활성 상태로 만든 캔버스는 overrideSorting이 풀림) + `EffectKit.KeepInFront`로 수확 작물·장보기 상품 그림/이름·요리 「담은 재료」 칸 그림/글자를 이펙트 앞으로. 순서: 배경·틀 < 이펙트 < 물건 그림. 세 게임 캡처로 확인
+- 영상이 밀리는 문제(사용자 지적) — `VideoView`의 영상 시계가 게임 시간(UnscaledGameTime)이고 소리는 Direct 출력이라 게임 프레임이 끊기면 화면만 늦어져 소리와 어긋남 → `timeUpdateMode = DSPTime`(오디오 시계 기준 · skipOnDrop 유지). 파일은 문제 없음(B-프레임 없음 · 24/60fps). **실측 못 함**: 에디터 비포커스 상태라 플레이 루프가 초당 몇 프레임으로 제한되고 영상이 일시정지됨 → 사용자 확인 필요
+
+### 디자이너 이펙트 프리팹 적용 — 수확·장보기·요리 강조·담김 연출 (튜토리얼 영상 기준)
+- 수령: `Assets/Prefabs/P_TargetPoint_Game1/2`(목표 강조: 빛 테 + 퍼지는 빛 · 3초 주기) · `P_Get_Game1/2/3`(담김 반짝임: 빛 테 + 별 8개) · 텍스처 `Assets/Texture/`(Light·Ring_blur·P_star). 튜토리얼 영상 프레임을 뽑아 쓰임새 확인 후 연결: 수확 = 라운드 시작·힌트 강조 때 목표 작물에 TargetPoint(한 주기 · 당기면 즉시 제거 · 04 구성표 「약 1초 강조」 유지) + 정답 포물선 시작 때 작물에 Get / 장보기 = 점등 중 목표 상품 카드에 TargetPoint 반복 + 구매 순간 카드에 Get / 요리 = 재료 담길 때 「담은 재료」 칸에 Get(정답 여부 무관 · 6-8-1). 기존 대체 빛 그림은 이펙트가 없을 때만 표시
+- 코드: `UI/EffectKit.cs` 신설(카탈로그에서 프리팹 찾아 UI 요소 중심에 생성 · 한 주기 후 자동 제거 · 반복 옵션 · `UiCamera.Of`) · `UiCatalog.Effects`/`FindEffect` + `UiCatalogBuilder`가 `Assets/Prefabs/P_*` 수집
+- **UICanvas를 Screen Space Overlay → Screen Space Camera(Main Camera · 직교 size 5 · plane 100)로 변경** — 파티클은 Overlay 캔버스 위에 안 그려지고, 이펙트가 시안 씬(SinMyung) 같은 구성(1유닛=108px)으로 만들어져 있음. 따라 바뀐 것: `DwellTarget`·`PullTarget` 화면 좌표 판정을 대상 캔버스 카메라 기준으로(팝업·커서 캔버스는 Overlay 그대로라 대상별로 판단) · Main Camera 포스트프로세싱 끔(Global Volume 톤매핑·블룸·비네트가 UI에 먹어 화면이 탁해짐 — 시안 씬도 꺼져 있음)
+- 검증(플레이 모드): 컴파일·콘솔 오류 없음 · 수확 당기기 → 목표 강조 제거·다음 라운드 강조 생성 · 장보기 점등 카드 반복 강조 → 도착 시 제거 · 요리 재료 선택 시 칸에 반짝임 · 세 게임 캡처로 영상과 같은 크기·위치 확인 · Dwell/Pull 판정 좌표(작물 중심 x 570/950/1330) 정상
+- 미적용: `Hand.prefab`(손 그림 커서 · 영상 속 커서) — 현재 커서(흰 원+파란 테 · 078f463)를 바꿀지 결정 필요
+
+### 영상 7편 수령·연결 — 스토리 4편(SCR-006·011·016·021) · 튜토리얼 3편(SCR-007·012·017)
+- 수령: `Assets/Video/영상완성/`(1.오프닝 22초 · 2.연결연출1 16초 · 3.연결연출2 16초 · 4.엔딩 15.7초) · `Assets/Video/튜토리얼 영상/`(튜토리얼게임1~3 = 수확·장보기·요리 · 7~14초). 2~4편이 HEVC 2048×1152라 HEVC 확장 없는 Windows에서 재생 불가 위험 → ffmpeg로 H.264 1920×1080(crf 18)로 변환, 7편 전부 bt709 색 태그 부여(Unity 「Color primaries unknown」 경고 대응). 원본은 `VideoSource/원본/`(Assets 밖 · .gitignore)
+- 코드: `UiCatalog`에 영상 목록(`FindVideo(파일명)`) · `UiCatalogBuilder`가 `Assets/Video`도 수집 · `UI/VideoView.cs` 신설(VideoPlayer→RenderTexture→RawImage · 둥근 창 Mask로 꽉 채움 · 첫 프레임 뒤 표시 · 소리는 영상 트랙 Direct). `VideoPlaceholderScreen` → `StoryVideoScreen`(영상 끝나면 자동 진행 · 진행 막대 = 재생 위치 · 영상 없으면 5초 자리 표시). `GameTutorialScreen` 반복 재생 + 단계 강조를 영상 진행 ÷ 단계 수로 동기화
+- 검증(UnityMCP 재연결 후): 컴파일 오류 없음 · 카탈로그 영상 7편 등록 · 플레이 모드에서 SCR-006 재생 → 끝에서 SCR-007 자동 진행 · 튜토리얼 반복 재생 + 단계 강조 동기화(6.2/7.0초에 3단계) · SCR-011 둥근 창 안 재생 화면 캡처 확인. 변환본에 B-프레임이 있으면 Unity가 「Unexpected timestamp」 경고 → 2~4편을 B-프레임 없이(`-bf 0`) 다시 인코딩해 경고 해소. 소리는 귀로 확인 못 함
+- 미정: 단계별 정확한 시점(영상 속 동작 시점에 맞추려면 단계별 초 지정 필요) · 자막(영상에 자막이 박혀 있는지 확인 후 52px 자막 자리 처리)
+
+## 2026-09-23
+
+### 추가 수령 자산 21장 연결 — 벌레 작물 7종 · 장보기 재료 6종 · 수확 식물 2종
+- 수령: `Assets/UI Image/` 21장(`UiCatalog.asset` 자동 재생성 확인 · 21 항목 추가). 그림 확인 후 `ArtCatalog` 별칭표에 연결: 벌레 작물 가지·고추·대추·오이·감·밤·호박(`SCR-008-Vegetable-02~08-Bug` · 06만 파일명이 `06_Bug`라 그대로 별칭) · 재료 팥(S1-04)·갈비(S3-02)·달걀(S3-04)·간장(S4-03)·김(S4-04)·곶감(S4-06) · 밤은 작물 그림 대신 점포용 `S1-Food-02`로 교체. 점포별 번호 = 04 문서 3장 취급 재료 순서와 일치
+- `HarvestDemo` 넝쿨·나무 회전 목록에 `Tree-03`(262×560)·`Vine-03`(151×573) 추가 → 6종 순환
+- 미연결(용도 미확인 · 시안 씬·코드에 사용처 없음): `Icon-Cooking-02`(냄비)·`Icon-Harvest-02`(채소 바구니)·`Icon-Shopping-02`(장바구니)·`Icon-Menu-02`(말풍선 목록)·`Dot-Line-36`(둥근 점선 테두리 126px) — 디자이너에게 사용 화면 확인 필요
+- 남은 미수령: 영상 전부. 검증: UnityMCP 미연결이라 컴파일·실행 확인 못 함 — 에디터 열어 확인 필요
+
+### 밥·솔잎 그림 수령 — 임포트 문제 수정 (`SCR-018-Food-Rice/Leaf`)
+- 두 파일이 Sprite Multiple + 슬라이스 0개로 임포트돼 Sprite 서브에셋이 없었고, 그래서 `UiCatalog` 자동 재생성에서 빠짐(빌더가 「스프라이트 아님」 경고로 건너뜀). 메타의 spriteMode를 Single로 고치고 `ArtCatalog` 별칭 밥·솔잎 추가 → 이로써 작물·재료·음식·점포·아바타 그림 전부 수령
+- 재발 방지: `Editor/ArtImportSettings.cs`에 `Assets/UI Image` 텍스처가 Multiple인데 슬라이스가 없으면 Single로 바꾸는 분기 추가 (디자이너가 슬라이스한 기존 파일은 조건에 안 걸려 그대로)
+- 확인 필요: Unity가 포커스를 받아 두 파일을 재임포트하면 Watcher가 카탈로그를 다시 만든다 — `UiCatalog.asset`에 `SCR-018-Food-Rice/Leaf` 항목이 생겼는지, 요리 화면 김밥(밥)·송편(솔잎) 재료 카드에 그림이 뜨는지 볼 것
+
+### 비율 유지 그림 쏠림 수정 — preserveAspect 피벗 중심화 (사용자 지적: 간장 왼쪽·음식 위쪽 쏠림)
+- 원인: `UiKit.Place`가 피벗을 왼쪽 위(0,1)로 두는데, uGUI `Image.preserveAspect`는 비율 맞춰 줄인 뒤 남는 여백을 **피벗 기준**으로 정렬한다 → 세로로 긴 그림은 왼쪽, 가로로 긴 그림은 위로 붙음. 그림 파일 자체는 전부 중앙 정렬(슬라이스 rect·투명 여백 스크립트로 검증)
+- 수정: `UiKit.SetPivot`(화면 위치 유지하며 피벗만 변경 · anchoredPosition += Δpivot×sizeDelta) 추가, `ImgFit`과 `ArtCatalog.TryApply`가 중심 피벗으로 맞춤. 좌우 뒤집기 보정(`anchoredPosition += (w,0)` · CalibrationScreen·CookingDemo 잎)은 중심 피벗에서 불필요해 제거. CommonScreens 페이지 버튼의 뒤집힌 화살표가 왼쪽으로 밀리던 것도 같이 해결
+- 검증 못 함(UnityMCP 미연결): 에디터에서 장보기 간장 카드·요리 재료 카드·SCR-002/요리 팝업 잎 위치·SCR-004 이전 버튼 화살표 확인 필요
+
+### WeeklyWork.md 신설 — 주간 정리
+- 루트에 `WeeklyWork.md` 생성, 9/21~9/27 주차(시안 자산 적용 · 실플레이 수정 · 추가 자산 연결 · 그림 쏠림 수정 · 결정/대기/다음 주 항목) 정리. DailyWork를 주 단위로 묶는 파일로, 최신 주가 위
+
 ## 2026-09-22
 
 ### 디자인 시안 자산 전면 적용 — 27화면 + 팝업 2종 (Assets/UI Image · SinMyung.unity 시안)

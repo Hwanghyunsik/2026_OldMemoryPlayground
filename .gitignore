@@ -32,3 +32,9 @@ crashlytics-build.properties
 
 # 개발 캡처
 /Captures/
+
+# 영상 원본 백업 (Assets/Video는 H.264 변환본)
+/VideoSource/
+# 영상 (용량 큼 · 저장소 밖에서 따로 전달) — 받은 뒤 Assets/Video/에 넣으면 UiCatalog가 자동 재생성된다
+/Assets/Video/
+/Assets/Video.meta

@@ -70,7 +70,9 @@ namespace Shinmyeong.Games.Shopping
             public Image LabelBg;
             public Text Label;
             public GameObject DoneBadge;
-            public RectTransform Light;
+            public RectTransform Light;     // 이펙트가 없을 때만 쓰는 대체 빛 그림
+            public RectTransform Card;      // 상품 카드 — 목표 강조·구매 반짝임 이펙트 자리
+            public GameObject TargetEffect; // 점등 중 반복 재생 (P_TargetPoint_Game2)
             public string Displayed;
             public bool Purchased;
         }
@@ -198,6 +200,9 @@ namespace Shinmyeong.Games.Shopping
                 var frame = UiKit.Img(card, "Frame", "SCR-013-Food-Bg", -26, -25, 239, 239, Color.white, sliced: true);
                 var item = UiKit.ImgFit(card, "Food", null, 27, 22, 135, 135);
                 var itemText = UiKit.Txt(card, "ItemName", 10, 40, 168, 100, "", 30, 6, Skin.Brown);
+                // 목표 강조·구매 반짝임 이펙트는 카드 틀 위 · 재료 그림 뒤 (튜토리얼 영상)
+                EffectKit.KeepInFront(item.gameObject);
+                EffectKit.KeepInFront(itemText.gameObject);
                 var labelBg = UiKit.ImgFit(card, "LabelBackground", "SCR-013-Food-Name-Bg", 24, 163, 140, 48);
                 var label = UiKit.Txt(labelBg.transform, "Label", 0, 0, 140, 48, "", 23, 5, Color.white);
                 // 구매 완료 표시 (확정) — 카드 오른쪽 위 체크
@@ -217,6 +222,7 @@ namespace Shinmyeong.Games.Shopping
                     Label = label,
                     DoneBadge = done.gameObject,
                     Light = light,
+                    Card = card,
                 };
                 card.SetParent(store, true); // 점포와 함께 켜고 끈다
                 light.SetAsFirstSibling();
@@ -377,6 +383,8 @@ namespace Shinmyeong.Games.Shopping
                 bool correct = boughtZone == targetZone;
                 boughtStore.Purchased = true;
                 boughtStore.DoneBadge.SetActive(true); // 구매 완료 표시 (확정)
+                SetLights(-1, false, false); // 목표 강조를 먼저 끄고 담김 반짝임을 보인다 (튜토리얼 영상 순서)
+                EffectKit.Play(EffectKit.ShoppingGet, boughtStore.Card);
                 boughtList.Add((boughtStore.Displayed, correct));
                 _records.Add($"R{round} 목표{ti + 1}: {targetItem}({ZoneNames[targetZone]}) → {boughtStore.Displayed}({ZoneNames[boughtZone]}) {(correct ? "그대로" : "다르게")} · {arriveTime:F1}s");
                 Debug.Log($"[Shopping] {_records[_records.Count - 1]}");
@@ -456,9 +464,14 @@ namespace Shinmyeong.Games.Shopping
             }
             foreach (var kv in _stores)
             {
-                bool lit = kv.Key == targetZone && storeLit;
+                bool lit = kv.Key == targetZone && storeLit && kv.Value.Go.activeSelf;
                 var store = kv.Value;
-                store.Light.gameObject.SetActive(lit && store.Go.activeSelf);
+                // 목표 강조 — 디자이너 이펙트(빛 테 + 퍼지는 빛)를 점등 동안 반복 · 없으면 대체 빛 그림
+                if (lit && store.TargetEffect == null)
+                    store.TargetEffect = EffectKit.Play(EffectKit.ShoppingTarget, store.Card, loop: true);
+                else if (!lit)
+                    EffectKit.Stop(ref store.TargetEffect);
+                store.Light.gameObject.SetActive(lit && store.TargetEffect == null);
                 UiKit.Apply(store.Frame, lit ? "SCR-013-Food-Bg-On" : "SCR-013-Food-Bg", sliced: !lit);
                 UiKit.Apply(store.LabelBg, lit ? "SCR-013-Food-Name-Bg_On" : "SCR-013-Food-Name-Bg");
                 store.LabelBg.preserveAspect = true;

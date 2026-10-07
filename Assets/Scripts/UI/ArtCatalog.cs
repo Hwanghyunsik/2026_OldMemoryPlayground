@@ -21,7 +21,7 @@ namespace Shinmyeong.UI
         public const string Stage = "무대";
 
         /// 시안 샘플 자산 별칭 (2026-09 수령분 · 번호 파일명 → 게임 데이터 한글명).
-        /// 미수령: 벌레 작물 7종(토마토만 있음) · 재료 8종(밥·팥·김·갈비·달걀·곶감·간장·솔잎)
+        /// 2026-09-23 기준 작물·재료·음식·점포·아바타 그림 전부 수령 (밥·솔잎은 요리 전용이라 SCR-018 번호)
         static readonly Dictionary<string, string> Alias = new Dictionary<string, string>
         {
             // 작물 8종 (매달린 · 놓인 것은 같은 그림 대체)
@@ -34,21 +34,36 @@ namespace Shinmyeong.UI
             [CropHanging + "/밤"] = "SCR-008-Vegetable-07",
             [CropHanging + "/호박"] = "SCR-008-Vegetable-08",
             [CropBug + "/토마토"] = "SCR-008-Vegetable-01-Bug",
-            // 재료 (장보기 점포 S1~S4 번호 + 작물 공용)
+            [CropBug + "/가지"] = "SCR-008-Vegetable-02-Bug",
+            [CropBug + "/고추"] = "SCR-008-Vegetable-03-Bug",
+            [CropBug + "/대추"] = "SCR-008-Vegetable-04-Bug",
+            [CropBug + "/오이"] = "SCR-008-Vegetable-05-Bug",
+            [CropBug + "/감"] = "SCR-008-Vegetable-06_Bug",   // 파일명만 '_' (수령 원본 그대로 · 카탈로그 Name과 일치)
+            [CropBug + "/밤"] = "SCR-008-Vegetable-07-Bug",
+            [CropBug + "/호박"] = "SCR-008-Vegetable-08-Bug",
+            // 재료 (장보기 점포 S1~S4 번호 · 점포별 순서는 04 문서 3장 취급 재료 순 + 작물 공용)
             [Ingredient + "/밀가루"] = "SCR-013-S1-Food-01",
+            [Ingredient + "/밤"] = "SCR-013-S1-Food-02",
             [Ingredient + "/깨"] = "SCR-013-S1-Food-03",
+            [Ingredient + "/팥"] = "SCR-013-S1-Food-04",
             [Ingredient + "/쌀가루"] = "SCR-013-S1-Food-05",
             [Ingredient + "/파"] = "SCR-013-S2-Food-01",
             [Ingredient + "/시금치"] = "SCR-013-S2-Food-02",
             [Ingredient + "/당근"] = "SCR-013-S2-Food-03",
             [Ingredient + "/버섯"] = "SCR-013-S2-Food-04",
             [Ingredient + "/소고기"] = "SCR-013-S3-Food-01",
+            [Ingredient + "/갈비"] = "SCR-013-S3-Food-02",
             [Ingredient + "/두부"] = "SCR-013-S3-Food-03",
+            [Ingredient + "/달걀"] = "SCR-013-S3-Food-04",
             [Ingredient + "/미역"] = "SCR-013-S4-Food-01",
             [Ingredient + "/김치"] = "SCR-013-S4-Food-02",
+            [Ingredient + "/간장"] = "SCR-013-S4-Food-03",
+            [Ingredient + "/김"] = "SCR-013-S4-Food-04",
             [Ingredient + "/당면"] = "SCR-013-S4-Food-05",
+            [Ingredient + "/곶감"] = "SCR-013-S4-Food-06",
             [Ingredient + "/호박"] = "SCR-008-Vegetable-08",
-            [Ingredient + "/밤"] = "SCR-008-Vegetable-07",
+            [Ingredient + "/밥"] = "SCR-018-Food-Rice",
+            [Ingredient + "/솔잎"] = "SCR-018-Food-Leaf",
             // 완성 음식 10종
             [Food + "/잡채"] = "SCR-018-Food-01",
             [Food + "/김치전"] = "SCR-018-Food-02",
@@ -130,7 +145,18 @@ namespace Shinmyeong.UI
             image.color = Color.white;
             image.type = Image.Type.Simple;
             image.preserveAspect = true;
+            CenterPivot(image.rectTransform);
             return true;
+        }
+
+        /// preserveAspect는 남는 여백을 피벗 기준으로 정렬한다 — 왼쪽 위 피벗(UiKit.Place)이면 세로로 긴 그림(간장 병)이
+        /// 왼쪽, 가로로 긴 그림이 위로 쏠린다. 화면 위치는 그대로 두고 피벗만 중심으로 옮긴다
+        static void CenterPivot(RectTransform rect)
+        {
+            var center = new Vector2(0.5f, 0.5f);
+            var delta = center - rect.pivot;
+            rect.anchoredPosition += new Vector2(delta.x * rect.sizeDelta.x, delta.y * rect.sizeDelta.y);
+            rect.pivot = center;
         }
     }
 }

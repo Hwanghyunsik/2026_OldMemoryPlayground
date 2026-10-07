@@ -344,23 +344,28 @@ namespace Shinmyeong.Flow.Screens
         }
     }
 
-    /// 영상 화면 공통 틀 (SCR-006 · 011 · 016 · 021 · 시안 좌표) — 영상 자산 도입 전 자리.
+    /// 스토리 영상 화면 공통 틀 (SCR-006 · 011 · 016 · 021 · 시안 좌표).
     /// 제목 간판 그림 · 영상 창 x420 y222 1082×608 · 자막 자리(창 내부 하단 · 52px) · 재생 진행 표시 x458 y865 ·
     /// 자동 진행 안내 · 건너뛰기 x1581 y216(영상 밖 우측 상단 · dwell 3초 · 2-4 확정 예외).
+    /// 영상(`Assets/Video/영상완성`)이 끝나면 다음 화면으로 자동 진행 — 영상이 없으면 자리 표시로 5초 뒤 진행.
     /// 다시 듣기·이야기 흐름 표시·진행 단계 UI를 두지 않는다(확정). TTS 허용 구간 — 음성 도입 시.
-    public class VideoPlaceholderScreen : ScreenBase
+    public class StoryVideoScreen : ScreenBase
     {
-        const float AutoSeconds = 5f; // 영상 자리 재생 시간 — 실제 영상 길이로 대체된다
+        const float FallbackSeconds = 5f; // 영상 파일이 없을 때 자리 표시 재생 시간
 
         string _titleSprite = "SCR-006-Title";
         Rect _titleRect = new Rect(805, 88, 310, 65);
+        string _clip = "1.오프닝";
         ScreenId _next = ScreenId.SCR_007;
         Image _progressFill;
+        Text _placeholder;
+        VideoView _video;
 
-        public VideoPlaceholderScreen Setup(string titleSprite, Rect titleRect, ScreenId next)
+        public StoryVideoScreen Setup(string titleSprite, Rect titleRect, string clip, ScreenId next)
         {
             _titleSprite = titleSprite;
             _titleRect = titleRect;
+            _clip = clip;
             _next = next;
             return this;
         }
@@ -370,11 +375,13 @@ namespace Shinmyeong.Flow.Screens
             UiKit.Background(transform, "SCR-006-Video-Bg");
             UiKit.ImgFit(transform, "Title", _titleSprite, _titleRect.x, _titleRect.y, _titleRect.width, _titleRect.height);
 
-            // 영상 창 — 흰 둥근 테 + 어두운 화면 (영상 도입 시 VideoPlayer RawImage로 교체)
+            // 영상 창 — 흰 둥근 테 + 둥근 화면(Mask) 안에 영상
             var viewport = UiKit.Node(transform, "VideoViewport", 420, 222, 1082, 608);
             UiKit.Img(viewport, "RoundedShape", "Box-Round-38", 0, 0, 1082, 608, Color.white, sliced: true);
-            UiKit.Img(viewport, "VideoImage", "Box-Round-38", 20, 20, 1042, 568, Skin.Hex("2d2926"), sliced: true);
-            UiKit.Txt(viewport, "Placeholder", 0, 0, 1082, 608, "비디오", 32, 7, Color.white);
+            var screen = UiKit.Img(viewport, "VideoImage", "Box-Round-38", 20, 20, 1042, 568, Skin.Hex("2d2926"), sliced: true);
+            _placeholder = UiKit.Txt(viewport, "Placeholder", 0, 0, 1082, 608, "비디오", 32, 7, Color.white);
+            _video = VideoView.Create(screen);
+            _video.Finished += () => Flow.Go(_next);
             // 자막 — 창 내부 하단 오버레이 · 52px (대본 확정 시 채움)
             UiKit.Txt(viewport, "Subtitle", 60, 430, 962, 140, "", 52, 6, Color.white, wrap: true);
 
@@ -387,16 +394,33 @@ namespace Shinmyeong.Flow.Screens
             UiKit.Footer(transform, "잠시 후 다음 이야기가 이어져요", 712, 979, 496, 56);
         }
 
-        protected override void OnEnter() => StartCoroutine(AutoNext());
+        protected override void OnEnter()
+        {
+            UiKit.SetBar(_progressFill, 0f);
+            bool playing = _video.Play(_clip, loop: false);
+            _placeholder.gameObject.SetActive(!playing);
+            if (!playing)
+                StartCoroutine(FallbackNext());
+        }
 
-        protected override void OnExit() => StopAllCoroutines();
+        protected override void OnExit()
+        {
+            StopAllCoroutines();
+            _video.Stop();
+        }
 
-        IEnumerator AutoNext()
+        void Update()
+        {
+            if (_video.HasClip)
+                UiKit.SetBar(_progressFill, _video.Progress);
+        }
+
+        IEnumerator FallbackNext()
         {
             float start = Time.time;
-            while (Time.time - start < AutoSeconds)
+            while (Time.time - start < FallbackSeconds)
             {
-                UiKit.SetBar(_progressFill, (Time.time - start) / AutoSeconds);
+                UiKit.SetBar(_progressFill, (Time.time - start) / FallbackSeconds);
                 yield return null;
             }
             Flow.Go(_next);

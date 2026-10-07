@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace Shinmyeong.UI
 {
     /// 디자인 자산 창구 — `Assets/UI Image/*.png`(UI 스프라이트)와 `Assets/Font/*.OTF`(S-Core Dream)를
     /// 에디터가 자동으로 모아 `Resources/UiCatalog.asset`에 담는다(Editor/UiCatalogBuilder).
-    /// 런타임 코드는 파일명(확장자 없음)으로 스프라이트를 찾는다 — 디자이너가 파일을 갱신하면 재생성만 하면 된다.
+    /// `Assets/Video/**/*.mp4`(스토리·튜토리얼 영상)·`Assets/Prefabs/P_*.prefab`(파티클 이펙트)도 같은 창구로 모은다.
+    /// 런타임 코드는 파일명(확장자 없음)으로 스프라이트·영상을 찾는다 — 디자이너가 파일을 갱신하면 재생성만 하면 된다.
     public class UiCatalog : ScriptableObject
     {
         [System.Serializable]
@@ -15,13 +17,24 @@ namespace Shinmyeong.UI
             public Sprite Sprite;
         }
 
+        [System.Serializable]
+        public class VideoEntry
+        {
+            public string Name;
+            public VideoClip Clip;
+        }
+
         public List<SpriteEntry> Sprites = new List<SpriteEntry>();
         public List<Font> Fonts = new List<Font>();
+        public List<VideoEntry> Videos = new List<VideoEntry>();
+        public List<GameObject> Effects = new List<GameObject>();
 
         static UiCatalog _instance;
         static bool _loaded;
         Dictionary<string, Sprite> _map;
         Dictionary<string, Font> _fontMap;
+        Dictionary<string, VideoClip> _videoMap;
+        Dictionary<string, GameObject> _effectMap;
 
         public static UiCatalog Instance
         {
@@ -48,6 +61,30 @@ namespace Shinmyeong.UI
                         _map[e.Name] = e.Sprite;
             }
             return _map.TryGetValue(name, out var s) ? s : null;
+        }
+
+        public VideoClip FindVideo(string name)
+        {
+            if (_videoMap == null)
+            {
+                _videoMap = new Dictionary<string, VideoClip>();
+                foreach (var e in Videos)
+                    if (e != null && !string.IsNullOrEmpty(e.Name) && e.Clip != null)
+                        _videoMap[e.Name] = e.Clip;
+            }
+            return _videoMap.TryGetValue(name, out var c) ? c : null;
+        }
+
+        public GameObject FindEffect(string name)
+        {
+            if (_effectMap == null)
+            {
+                _effectMap = new Dictionary<string, GameObject>();
+                foreach (var e in Effects)
+                    if (e != null)
+                        _effectMap[e.name] = e;
+            }
+            return _effectMap.TryGetValue(name, out var go) ? go : null;
         }
 
         public Font FindFont(string name)
