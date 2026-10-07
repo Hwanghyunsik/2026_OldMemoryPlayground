@@ -61,6 +61,7 @@ namespace Shinmyeong.Save
     public class HarvestRoundRecord
     {
         public int Round;
+        public string Target;     // 그 라운드의 목표 작물 — 「목표 / 고른 것」 비교용 (2026-10-07 추가)
         public string Picked;     // 선택 작물
         public string Result;     // 정답 | 다른 선택 | 벌레
         public float ReactionSec; // 목표 강조 종료(t=0)부터 당김 확정까지
@@ -92,6 +93,7 @@ namespace Shinmyeong.Save
     {
         public int Round;
         public string Food;
+        public List<string> Answers = new List<string>(); // 기록 시점의 레시피 재료 — 레시피가 바뀌어도 옛 기록 해석 가능 (2026-10-07 추가)
         public List<CookingPick> Picks = new List<CookingPick>();
         public float RoundSec;    // 최초 팝업 닫힘부터 슬롯 완성까지
         public float ReactionSec; // 최초 팝업 닫힘부터 첫 재료 선택까지 — 반응 시간 끝점(18-4 확정)

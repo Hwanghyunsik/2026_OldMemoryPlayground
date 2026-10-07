@@ -214,6 +214,7 @@ namespace Shinmyeong.Games.Harvest
             _play.HarvestRounds.Add(new HarvestRoundRecord
             {
                 Round = round,
+                Target = targetName,
                 Picked = pulled.Name,
                 Result = result,
                 ReactionSec = reaction,

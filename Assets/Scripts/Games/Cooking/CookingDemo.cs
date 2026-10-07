@@ -274,6 +274,7 @@ namespace Shinmyeong.Games.Cooking
             {
                 Round = round,
                 Food = recipe.Food,
+                Answers = new List<string>(recipe.Answers),
                 RoundSec = roundTime,
                 ReactionSec = Mathf.Max(0f, _firstPickSec),
                 ReviewCount = reviewCount,
