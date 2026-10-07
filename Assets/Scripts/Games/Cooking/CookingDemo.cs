@@ -413,9 +413,6 @@ namespace Shinmyeong.Games.Cooking
                 var icon = UiKit.ImgFit(face.transform, "Food", null, 14, 18, 69, 60);
                 icon.gameObject.SetActive(false);
                 var text = UiKit.Txt(face.transform, "Label", 0, 0, 96, 96, "", 22, 6, Skin.BrownDark);
-                // 담김 반짝임 이펙트는 칸(흰 원) 위 · 재료 그림 뒤 (튜토리얼 영상)
-                EffectKit.KeepInFront(icon.gameObject);
-                EffectKit.KeepInFront(text.gameObject);
                 _slotFaces.Add(face);
                 _slotIcons.Add(icon);
                 _slotTexts.Add(text);
@@ -443,7 +440,7 @@ namespace Shinmyeong.Games.Cooking
             else
                 _slotTexts[slot].text = cand.Item;
             _picks.Add(cand.Item);
-            EffectKit.Play(EffectKit.CookingGet, _slotFaces[slot].rectTransform); // 담김 반짝임 (정답 여부 무관 · 확정 6-8-1)
+            EffectKit.Play(EffectKit.CookingGet, _slotFaces[slot].rectTransform, front: true); // 담김 반짝임 — 칸 앞 (정답 여부 무관 · 확정 6-8-1)
             if (_firstPickSec < 0f)
                 _firstPickSec = Time.time - _roundT0; // 반응 시간 — 정답 여부 무관, 첫 선택 확정 시점(18-4)
 

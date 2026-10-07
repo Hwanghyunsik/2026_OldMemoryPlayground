@@ -81,6 +81,7 @@ namespace Shinmyeong.Games.Shopping
         PlayHud _hud;
         Text _guideText;
         RectTransform _userMarker;
+        const float MarkerSize = 166f, MarkerCenterY = 917f; // 사용자 위치 마커 (튜토리얼 영상 · 발판 줄 위)
         Image _basketImage;
         readonly Image[] _pads = new Image[5];
         readonly Dictionary<int, StoreView> _stores = new Dictionary<int, StoreView>();
@@ -171,9 +172,9 @@ namespace Shinmyeong.Games.Shopping
             }
             _judge.Tick(svc.BodyCenterX01, Time.time);
 
-            // 사용자 현재 위치 표시 (개발 판단 C6 제안: 발판 아래 작은 점)
+            // 사용자 현재 위치(몸 중심) 표시 — 발판 줄 위 (튜토리얼 영상)
             if (_userMarker != null)
-                _userMarker.anchoredPosition = new Vector2(svc.BodyCenterX01 * 1920f, -1050f);
+                _userMarker.anchoredPosition = new Vector2(svc.BodyCenterX01 * 1920f, -MarkerCenterY);
         }
 
         void BuildStage()
@@ -200,9 +201,6 @@ namespace Shinmyeong.Games.Shopping
                 var frame = UiKit.Img(card, "Frame", "SCR-013-Food-Bg", -26, -25, 239, 239, Color.white, sliced: true);
                 var item = UiKit.ImgFit(card, "Food", null, 27, 22, 135, 135);
                 var itemText = UiKit.Txt(card, "ItemName", 10, 40, 168, 100, "", 30, 6, Skin.Brown);
-                // 목표 강조·구매 반짝임 이펙트는 카드 틀 위 · 재료 그림 뒤 (튜토리얼 영상)
-                EffectKit.KeepInFront(item.gameObject);
-                EffectKit.KeepInFront(itemText.gameObject);
                 var labelBg = UiKit.ImgFit(card, "LabelBackground", "SCR-013-Food-Name-Bg", 24, 163, 140, 48);
                 var label = UiKit.Txt(labelBg.transform, "Label", 0, 0, 140, 48, "", 23, 5, Color.white);
                 // 구매 완료 표시 (확정) — 카드 오른쪽 위 체크
@@ -225,6 +223,7 @@ namespace Shinmyeong.Games.Shopping
                     Card = card,
                 };
                 card.SetParent(store, true); // 점포와 함께 켜고 끈다
+                EffectKit.KeepInFront(card.gameObject); // 목표 강조는 카드 뒤에서 퍼지고 · 구매 반짝임은 카드 앞 (튜토리얼 영상)
                 light.SetAsFirstSibling();
             }
 
@@ -246,10 +245,14 @@ namespace Shinmyeong.Games.Shopping
                 _pads[i] = pad;
             }
 
-            // 사용자 위치 마커
-            var marker = UiKit.Img(_stageRoot, "UserMarker", "Circle-52", 0, 0, 30, 30, Skin.Blue);
-            marker.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            _userMarker = marker.rectTransform;
+            // 사용자 위치(몸 중심) 마커 — 튜토리얼 영상과 같은 모양: 흰 테 초록 원 + 사람 아이콘 + 바닥 그림자 · 발판 위
+            var marker = UiKit.Node(_stageRoot, "UserMarker", 0, 0, MarkerSize, MarkerSize);
+            marker.pivot = new Vector2(0.5f, 0.5f);
+            UiKit.Img(marker, "Shadow", "Circle-125", MarkerSize * 0.5f - 70f, MarkerSize * 0.5f + 75f, 140, 32, Skin.Hex("402108", 0.3f));
+            UiKit.Img(marker, "Ring", "Circle-125", 0, 0, MarkerSize, MarkerSize, Color.white);
+            UiKit.Img(marker, "Fill", "Circle-125", 8, 8, MarkerSize - 16, MarkerSize - 16, Skin.Green);
+            UiKit.ImgFit(marker, "Person", "Icon-User", MarkerSize * 0.5f - 46f, MarkerSize * 0.5f - 46f, 92, 92, Color.white);
+            _userMarker = marker;
 
             // 공통 HUD — 목표 칩 3개는 GoalRoot에 직접 그린다 · 경과 시간 · 진행 레일 (2-5 확정)
             _hud = PlayHud.Create(_stageRoot);
@@ -384,7 +387,7 @@ namespace Shinmyeong.Games.Shopping
                 boughtStore.Purchased = true;
                 boughtStore.DoneBadge.SetActive(true); // 구매 완료 표시 (확정)
                 SetLights(-1, false, false); // 목표 강조를 먼저 끄고 담김 반짝임을 보인다 (튜토리얼 영상 순서)
-                EffectKit.Play(EffectKit.ShoppingGet, boughtStore.Card);
+                EffectKit.Play(EffectKit.ShoppingGet, boughtStore.Card, front: true);
                 boughtList.Add((boughtStore.Displayed, correct));
                 _records.Add($"R{round} 목표{ti + 1}: {targetItem}({ZoneNames[targetZone]}) → {boughtStore.Displayed}({ZoneNames[boughtZone]}) {(correct ? "그대로" : "다르게")} · {arriveTime:F1}s");
                 Debug.Log($"[Shopping] {_records[_records.Count - 1]}");

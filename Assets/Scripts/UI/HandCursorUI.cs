@@ -11,6 +11,9 @@ namespace Shinmyeong.UI
     public class HandCursorUI : MonoBehaviour
     {
         public HandSide Side;
+
+        /// 손 조작이 없는 화면(SCR-002 사용자 감지·보정)에서 켠다 — 커서를 숨긴다
+        public static bool Hidden;
         [SerializeField] Image _image;
         [SerializeField] GameObject _handPrefab;
         [Tooltip("손 그림 중심을 기준점(손바닥)에서 위로 올리는 거리 px")]
@@ -88,7 +91,7 @@ namespace Shinmyeong.UI
         void LateUpdate()
         {
             var svc = BodyTrackingService.Instance;
-            bool show = svc != null && svc.GetHandValid(Side);
+            bool show = !Hidden && svc != null && svc.GetHandValid(Side);
             if (_image != null && _image.enabled != show)
             {
                 _image.enabled = show;

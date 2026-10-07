@@ -31,6 +31,7 @@ namespace Shinmyeong.Games.Harvest
         const float SlotLeft = 570f, SlotRight = 1330f;   // 작물 자리 중심 x 범위 (시안 4자리 기준)
         const float CropTop = 390f, CropW = 200f, CropH = 240f;
         static readonly Vector2 BasketCenter = new Vector2(960f, 900f);
+        static readonly Vector2 ShowPoint = new Vector2(960f, 640f); // 수확한 작물을 보여 주는 자리 — 바구니 바로 위 가운데 (튜토리얼 영상)
 
         enum Kind { Target, Decoy, Bug }
 
@@ -285,7 +286,7 @@ namespace Shinmyeong.Games.Harvest
             }
 
             go.AddComponent<PullTarget>();
-            EffectKit.KeepInFront(go); // 목표 강조·담김 이펙트는 작물 그림 뒤로 (튜토리얼 영상)
+            EffectKit.KeepInFront(go); // 목표 강조는 작물 뒤에서 퍼진다 (담김 반짝임은 front로 작물 앞)
             return new Crop
             {
                 Kind = kind,
@@ -319,28 +320,38 @@ namespace Shinmyeong.Games.Harvest
             _glow.gameObject.SetActive(false);
         }
 
+        /// 정답 수확 연출 (튜토리얼 영상 순서): ① 가운데(바구니 위)로 이동 → ② 담김 반짝임 → ③ 작아지며 바구니로
         IEnumerator ArcIntoBasket(Crop crop)
         {
-            var from = crop.Center;
-            var to = BasketCenter + new Vector2(0f, -30f);
-            EffectKit.Play(EffectKit.HarvestGet, crop.Rect); // 담김 반짝임 — 작물을 따라 바구니로 간다
-            float t = 0f;
-            const float duration = 0.7f;
-            while (t < duration)
-            {
-                t += Time.deltaTime;
-                float u = Mathf.Clamp01(t / duration);
-                var pos = Vector2.Lerp(from, to, u);
-                pos.y -= 130f * Mathf.Sin(Mathf.PI * u); // 포물선 (위로 떴다가 내려온다)
-                crop.Rect.anchoredPosition = new Vector2(pos.x, -pos.y);
-                crop.Rect.localScale = Vector3.one * Mathf.Lerp(1f, 0.5f, u);
-                yield return null;
-            }
+            // ① 가운데로 이동 — 부드럽게 감속
+            yield return MoveCrop(crop, crop.Center, ShowPoint, 1f, 1f, 0.45f);
+
+            // ② 그 자리에서 반짝임 (작물 앞) — 테가 퍼지는 동안 잠시 머문다
+            EffectKit.Play(EffectKit.HarvestGet, crop.Rect, front: true);
+            yield return new WaitForSeconds(0.5f);
+
+            // ③ 작아지며 바구니 안으로
+            yield return MoveCrop(crop, ShowPoint, BasketCenter + new Vector2(0f, -30f), 1f, 0.45f, 0.4f);
             Destroy(crop.Go);
             // 바구니 반짝임
             _basketImage.color = new Color(1f, 0.9f, 0.6f);
             yield return new WaitForSeconds(0.15f);
             _basketImage.color = Color.white;
+        }
+
+        IEnumerator MoveCrop(Crop crop, Vector2 from, Vector2 to, float scaleFrom, float scaleTo, float duration)
+        {
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float u = Mathf.Clamp01(t / duration);
+                float e = 1f - (1f - u) * (1f - u); // 감속
+                var pos = Vector2.Lerp(from, to, e);
+                crop.Rect.anchoredPosition = new Vector2(pos.x, -pos.y);
+                crop.Rect.localScale = Vector3.one * Mathf.Lerp(scaleFrom, scaleTo, e);
+                yield return null;
+            }
         }
 
         IEnumerator FlyOff(Crop crop)

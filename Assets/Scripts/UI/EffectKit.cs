@@ -15,7 +15,8 @@ namespace Shinmyeong.UI
     /// 디자이너 파티클 이펙트(`Assets/Prefabs/P_*` · 튜토리얼 영상과 같은 연출)를 UI 위에 띄운다.
     /// 이펙트는 시안 씬처럼 Screen Space Camera 캔버스(직교 카메라 size 5 → 1유닛 = 108px) 기준으로 만들어져 있어
     /// UICanvas도 같은 방식이어야 크기·앞뒤 순서가 맞는다(파티클 sortingOrder 1~3 > 캔버스 0).
-    /// 이펙트는 배경·틀 위, 물건 그림(작물·재료) 뒤에 그려야 한다 — 물건 그림은 KeepInFront로 이펙트 앞에 올린다.
+    /// 그리기 순서(튜토리얼 영상 기준): 배경 < 목표 강조(TargetPoint) < 물건·카드(KeepInFront) < 담김 반짝임(Get · front).
+    /// 강조는 카드·작물 뒤에서 퍼지고, 담김 반짝임은 카드·작물 앞에서 터진다.
     ///  · P_TargetPoint_Game1/2 — 목표 강조(빛 테 + 퍼지는 빛) · 3초 주기
     ///  · P_Get_Game1/2/3 — 담김 순간 반짝임(빛 테 + 별 8개) · 1초 이내
     public static class EffectKit
@@ -28,7 +29,10 @@ namespace Shinmyeong.UI
 
         /// parent 중심(+offset px)에 이펙트를 띄운다. loop=false면 한 주기 재생 후 스스로 지워진다(중간에 끊으려면 Stop).
         /// loop=true면 하위 파티클을 반복으로 바꿔 계속 재생 — 끌 때는 Stop으로 지운다.
-        public static GameObject Play(string name, RectTransform parent, Vector2 offset = default, bool loop = false)
+        /// front=true면 물건·카드(KeepInFront) 앞에 그린다 — 담김 반짝임용
+        public const int FrontOffset = 20;
+
+        public static GameObject Play(string name, RectTransform parent, Vector2 offset = default, bool loop = false, bool front = false)
         {
             var prefab = UiCatalog.Instance != null ? UiCatalog.Instance.FindEffect(name) : null;
             if (prefab == null || parent == null)
@@ -55,6 +59,8 @@ namespace Shinmyeong.UI
             foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
             {
                 ps.gameObject.layer = go.layer;
+                if (front)
+                    ps.GetComponent<ParticleSystemRenderer>().sortingOrder += FrontOffset;
                 if (ps.emission.enabled)
                     lifetime = Mathf.Max(lifetime, ps.main.startDelay.constantMax + ps.main.duration + ps.main.startLifetime.constantMax);
                 if (loop)

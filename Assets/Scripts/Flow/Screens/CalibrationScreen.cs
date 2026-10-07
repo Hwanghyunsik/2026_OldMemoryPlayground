@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using Shinmyeong.Interaction;
 using Shinmyeong.Tracking;
 using Shinmyeong.UI;
 
@@ -8,8 +7,8 @@ namespace Shinmyeong.Flow.Screens
 {
     /// SCR-002 사용자 감지·보정 (설계서 p6 확정 · 시안 SCR-002) — 위치 안내 + 개인 기준값 보정을 한 화면에 통합.
     /// 요소: 안내 헤더 · 실시간 카메라 영상 + 전신 정렬 가이드(점선 사각형+스켈레톤) · 가변 보정 메시지 ·
-    ///   권장 거리 안내 · 4단계 체크리스트(쉬운 말 · 기술 용어 금지) · 유지 게이지 · 완료 시 SCR-003 자동 이동(버튼 없음) ·
-    ///   처음으로(dwell 3초 — 입력 방식 개발 판단 ⑧ 기준안).
+    ///   권장 거리 안내 · 4단계 체크리스트(쉬운 말 · 기술 용어 금지) · 유지 게이지 · 완료 시 SCR-003 자동 이동(버튼 없음).
+    /// 처음으로 버튼·손 커서는 두지 않는다(2026-10-07 사용자 결정 — 서는 위치를 맞추는 동안 손 조작이 없다).
     /// 여기서 확보한 기준값(Calibration)이 이후 판정 영역 산출의 기준이 된다(5-8).
     public class CalibrationScreen : ScreenBase
     {
@@ -115,8 +114,6 @@ namespace Shinmyeong.Flow.Screens
             // 4단계 유지 게이지 (숫자 없음)
             _holdFill = UiKit.Bar(status, "HoldGauge", 35, 330, 600, 12, Skin.Track3, Skin.Green, "TimeBar", "TimeBar");
 
-            UiKit.NavButton(transform, "HomeButton", 44, 477, "처음으로", "Icon-Home", () => Flow.Go(ScreenId.SCR_001))
-                .gameObject.AddComponent<SafeAreaExempt>().Reason = "디자인 시안 배치(좌측 끝) — 2-4 안전 영역 밖 · 기획 확인 대기(Q5)";
             UiKit.Footer(transform, "준비가 끝나면 자동으로 넘어갑니다", 699, 970, 496, 54, 25);
         }
 
@@ -126,7 +123,10 @@ namespace Shinmyeong.Flow.Screens
             _sampleCount = 0;
             _sumCenterX = _sumHeadY = _sumShoulderY = _sumHipY = _sumAnkleY = 0f;
             Calibration.Clear(); // 새 사용자·재진입 시 다시 잰다
+            HandCursorUI.Hidden = true; // 이 화면에는 손으로 누를 것이 없다
         }
+
+        protected override void OnExit() => HandCursorUI.Hidden = false;
 
         void Update()
         {
