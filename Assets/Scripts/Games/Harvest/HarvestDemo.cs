@@ -30,6 +30,7 @@ namespace Shinmyeong.Games.Harvest
         };
         const float SlotLeft = 570f, SlotRight = 1330f;   // 작물 자리 중심 x 범위 (시안 4자리 기준)
         const float CropTop = 390f, CropW = 200f, CropH = 240f;
+        const float ArrowSize = 120f, ArrowGap = 16f, ArrowTravel = 40f; // 목표 강조 아래 방향 화살표 — 작물 바로 아래에서 아래로 내려가는 움직임
         static readonly Vector2 BasketCenter = new Vector2(960f, 900f);
         static readonly Vector2 ShowPoint = new Vector2(960f, 640f); // 수확한 작물을 보여 주는 자리 — 바구니 바로 위 가운데 (튜토리얼 영상)
 
@@ -56,6 +57,8 @@ namespace Shinmyeong.Games.Harvest
         PlayHud _hud;
         Image _basketImage;
         RectTransform _glow;
+        RectTransform _arrow;
+        Image _arrowImage;
         readonly List<Crop> _crops = new List<Crop>();
         readonly List<string> _records = new List<string>();
         readonly Dictionary<string, int> _targetUseCount = new Dictionary<string, int>(); // 같은 작물 한 판 2회 이하 (확정)
@@ -122,6 +125,15 @@ namespace Shinmyeong.Games.Harvest
             _basketImage = UiKit.ImgFit(_stageRoot, "Basket", "Basket", 784, 769, 353, 260);
 
             _cropsRoot = UiKit.Group(_stageRoot, "HarvestMaterials");
+
+            // 목표 강조 아래 방향 화살표 (04 구성표 · 05 발주서 03 시트 · 07 4-3) — 왼쪽 화살표 그림을 아래로 돌려 쓴다
+            _arrowImage = UiKit.ImgFit(_stageRoot, "TargetArrow", "Icon-Arrow-02", 0, 0, ArrowSize, ArrowSize, Skin.Orange);
+            _arrow = _arrowImage.rectTransform;
+            _arrow.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            var outline = _arrowImage.gameObject.AddComponent<Outline>(); // 넝쿨·나무 위에서도 보이게 흰 테두리
+            outline.effectColor = Color.white;
+            outline.effectDistance = new Vector2(4f, -4f);
+            _arrow.gameObject.SetActive(false);
 
             _hud = PlayHud.Create(_stageRoot); // 공통 HUD — 목표 패널·경과 시간·진행 레일 (2-5 확정)
         }
@@ -308,6 +320,8 @@ namespace Shinmyeong.Games.Harvest
             _glow.gameObject.SetActive(_targetEffect == null);
             _glow.SetAsFirstSibling();
             _plantsRoot.SetAsFirstSibling();
+            float arrowTop = target.Center.y + CropH * 0.5f + ArrowGap + ArrowSize * 0.5f;
+            _arrow.gameObject.SetActive(true);
             float t = 0f;
             while (t < _highlightSeconds)
             {
@@ -315,10 +329,17 @@ namespace Shinmyeong.Games.Harvest
                 float pulse = 0.5f + 0.5f * Mathf.Sin(t * 12f);
                 target.Rect.localScale = Vector3.one * (1f + 0.1f * pulse);
                 _glow.localScale = Vector3.one * (0.9f + 0.2f * pulse);
+                // 화살표는 위에서 아래로만 반복해 내려간다 (당기는 방향 안내 · 위로 튀어 오르지 않게 톱니 모양)
+                float drop = Mathf.Repeat(t * 2f, 1f);
+                _arrow.anchoredPosition = new Vector2(target.Center.x, -(arrowTop + ArrowTravel * drop));
+                var c = _arrowImage.color;
+                c.a = 1f - 0.6f * drop * drop;
+                _arrowImage.color = c;
                 yield return null;
             }
             target.Rect.localScale = Vector3.one;
             _glow.gameObject.SetActive(false);
+            _arrow.gameObject.SetActive(false);
         }
 
         /// 정답 수확 연출 (튜토리얼 영상 순서): ① 가운데(바구니 위)로 이동 → ② 담김 반짝임 → ③ 작아지며 바구니로
