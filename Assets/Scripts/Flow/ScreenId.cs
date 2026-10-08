@@ -31,6 +31,8 @@ namespace Shinmyeong.Flow
         SCR_023,   // 개인 누적 성과 이력
         POP_001,   // 일시정지
         POP_002,   // 그만두기 확인
+        LOGIN,         // 운영자 로그인 (기획 화면 코드 없음 · 93 문서 D1 · 더미)
+        DEVICE_SELECT, // 기기 선택 (기획 화면 코드 없음 · 93 문서 D2·D3 · 더미)
     }
 
     public enum GameMode

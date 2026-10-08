@@ -47,21 +47,26 @@ namespace Shinmyeong.Flow
         }
 
         /// 개발용: 실행 인자 `-screen SCR_006`으로 시작 화면을 바로 지정한다(빌드에서 영상·화면 단독 확인용).
-        /// 인자가 없으면 정상 흐름(SCR-001)으로 시작한다.
+        /// 인자가 없으면 정상 흐름으로 시작한다 — 기기가 연결되지 않은 PC는 운영자 로그인(LOGIN) → 기기 선택,
+        /// 연결된 PC는 SCR-001. `-relogin`은 기기 연결을 지우고 로그인 화면부터 시작한다.
         void Start()
         {
             var args = System.Environment.GetCommandLineArgs();
+            if (System.Array.IndexOf(args, "-relogin") >= 0)
+                DeviceAuth.Clear();
             for (int i = 0; i < args.Length - 1; i++)
                 if (args[i] == "-screen" && System.Enum.TryParse(args[i + 1], out ScreenId start))
                 {
                     Go(start);
                     return;
                 }
-            Go(ScreenId.SCR_001);
+            Go(DeviceAuth.IsRegistered ? ScreenId.SCR_001 : ScreenId.LOGIN);
         }
 
         void BuildScreens()
         {
+            Add<LoginScreen>(ScreenId.LOGIN);
+            Add<DeviceSelectScreen>(ScreenId.DEVICE_SELECT);
             Add<IdleScreen>(ScreenId.SCR_001);
             Add<CalibrationScreen>(ScreenId.SCR_002);
             Add<UserSelectScreen>(ScreenId.SCR_003);
@@ -129,6 +134,8 @@ namespace Shinmyeong.Flow
             }
 
             PausePopup.CloseIfOpen(); // 화면이 바뀌면 일시정지 상태를 남기지 않는다
+            // 마우스는 관리 화면(로그인·기기 선택 — 키보드·마우스 입력)에서만 보인다 — 이후 게임은 손 커서만 쓴다
+            Cursor.visible = id == ScreenId.LOGIN || id == ScreenId.DEVICE_SELECT;
             LastMoveWasBack = false;
 
             if (id == ScreenId.SCR_001)

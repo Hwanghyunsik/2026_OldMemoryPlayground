@@ -2,6 +2,48 @@
 
 > 룰: CLAUDE.md 「작업 기록」 참조. 최신 날짜가 위로 오게 기록한다.
 
+## 2026-10-08
+
+### 서버 데이터 설계를 MongoDB 형식으로 변경 (사용자 결정)
+- `Docs/93-1_서버_ERD_공유본.md`(v0.2)·`Docs/93_서버_ERD_초안.md`: SQL 테이블 13개 → 컬렉션 5개(`organizations`·`operators`·`devices`·`participants`·`play_sessions`). 기기 설정·상태는 `devices`에, 라운드 상세(장보기 items · 요리 answers/picks 포함)는 `play_sessions.rounds`에 임베드 — 1회 참여 = 문서 1개
+- 문서 구조 예시 · 인덱스(compound · unique · partial) · 집계 파이프라인 예시 · A2 본문 = 문서 모양(`rounds` 단일 필드로 통일) · 멱등은 `_id` 중복 키(11000) 성공 처리 · 연쇄 삭제 없음 → API에서 `deleteMany`
+- 미해결: UUID 저장 형식(BSON UUID/문자열) 서버 팀 선택(Q7 추가)
+
+### 운영자 로그인 필드명 변경 — `username` / `password` (사용자 요청)
+- 93·93-1 문서: `operators.login_id` → `username`, `password_hash` → `password`(값은 해시로 저장 · 원문 금지 명시) · unique 인덱스 · D1 기기 등록 요청 필드 표기 갱신
+
+### 기기 등록 로그인 화면 — 더미 (`LoginScreen` · `DeviceAuth`)
+- 93 문서 D1(설치 때 운영자 1회 로그인 → 기기 토큰) 흐름을 더미로 구현: `Flow/Screens/LoginScreen.cs`(아이디·비밀번호·기기 이름 입력 · 키보드/마우스 · Tab/Enter · 손 커서 숨김) · `Save/DeviceAuth.cs`(더미 계정 `admin`/`1234`만 통과 · 가짜 토큰을 PlayerPrefs에 보관) · `ScreenId.LOGIN` 추가
+- 시작 분기: 미등록 기기 → LOGIN, 등록된 기기 → SCR-001. 등록 해제는 실행 인자 `-relogin` 또는 메뉴 `Shinmyeong/기기 등록 해제`
+- 검증(플레이): 틀린 비밀번호 → 다시 확인 문구 · 맞으면 등록 후 SCR-001 이동 · 재실행 시 로그인 건너뜀. 씬에 EventSystem이 없어 이 화면이 처음 열릴 때 만든다
+- 기획 화면 코드 없는 화면(관리용)이라 시안 없음. 서버 연동 시 `DeviceAuth.Register` 내부만 API 호출로 교체
+
+### 로그인 이후 마우스 커서 숨김 (사용자 결정)
+- 관리자 영역(로그인)은 키보드·마우스로 진행하고, 그 밖의 화면은 OS 마우스 커서를 숨김 — `FlowManager.Go`에서 `Cursor.visible = (LOGIN일 때만)`. 등록된 기기가 SCR-001로 바로 시작해도 숨겨짐
+
+### 설치 흐름 변경 — 운영자 로그인 → 등록된 기기 선택 (사용자 결정)
+- 기기 「이름 입력·신규 등록」 대신, 관리자 웹에 등록된 기관 기기 중 1대를 고르는 구조로 변경. `LoginScreen`(아이디·비밀번호만) → 새 `DeviceSelectScreen`(`ScreenId.DEVICE_SELECT` · 목록 선택 → 「이 기기로 시작」 · 「다른 계정으로 로그인」) → SCR-001. `DeviceAuth`: `Login`/`LoadDevices`(더미 3대)/`SelectDevice`. 마우스 커서는 두 관리 화면에서만 표시
+- 93·93-1 문서: API D1 `POST /auth/login` · D2 `GET /devices` · D3 `POST /devices/{id}/token`(기존 토큰 무효) · `devices`에 `created_by/created_at`(웹 등록) · `token_issued_at/by` 추가
+- 검증(플레이): 로그인 → 기기 목록 3개 표시 → 「2층 강당」 확정 → SCR-001 · 커서 숨김 확인. 확인 후 연결 해제해 둠
+- 기획 충돌: 관리 화면을 TV에 띄우지 않음(18-1)과 다름 — 93 문서에 기획 공유 필요로 표시
+
+### 토큰 규칙 명시 — 같은 계정 중복 로그인 시 기존 토큰 유지 (사용자 결정)
+- 93-1 공유본 5-1 「토큰 규칙」 신설(이하 절 번호 +1) · 93 문서 요약: 운영자 토큰은 로그인마다 추가 발급·만료로만 소멸(단일 세션 처리 안 함) · 기기 토큰은 기기에 묶여 계정 상태와 무관 · 사용 중인 기기 재선택은 D2 `in_use` 표시 + D3 `replace: true` 없으면 409
+- 게임 더미는 변경 없음(로그인이 저장된 기기 토큰을 건드리지 않음). 「사용 중」 표시·교체 확인 UI는 정책 확정 후
+
+### 기기 선택 — 「다른 PC에서 사용 중」 표시 + 옮기기 확인 단계 (제안안 확정)
+- `DeviceInfo.InUse`(D2 `in_use`) · 더미 「경로당 거실」을 사용 중으로 · `DeviceAuth.SelectDevice(device, replace)` — 사용 중 기기를 replace 없이 고르면 false(409 흉내)
+- `DeviceSelectScreen`: 사용 중 행에 주황 태그 · 고르면 안내 문구 · 「이 기기로 시작」 첫 클릭은 확인 단계(주황 「이 PC로 옮기기」+ 기존 PC 연결 끊김 안내) · 두 번째 클릭에 replace로 연결 · 다른 행을 고르면 확인 취소
+- 검증(플레이): 사용 중 기기 첫 클릭 → 미연결·화면 유지 · 두 번째 클릭 → 연결 후 SCR-001. 확인 후 연결 해제해 둠
+
+### 세션 마무리 — 상태 · 재개 지점
+- 상태: 서버 데이터 설계(MongoDB · 93/93-1) · 설치 흐름 더미(로그인 → 기기 선택 · 사용 중 확인 · 토큰 규칙) 완료. 미커밋
+- 재개: **서버 팀 API 수령 후** `DeviceAuth`(D1~D3) 내부를 실제 호출로 교체 → SaveStore를 API 클라이언트로 전환(A1~A3 · 목록 캐시·기록 재전송) → PlayRecord에 SessionId·StoryRunId 추가
+- 대기: 기획 공유(관리 화면 TV 표시 18-1 · 외부 서버 Q1 · 관리 번호 Q2) · 서버 팀 회신(UUID 형식 Q7 등)
+
+### 주간 기록 · 커밋·푸시
+- `WeeklyWork.md`에 41주차(10/5~10/11) 정리 추가(40주차는 작업 기록 없음) · 10/8 작업 일괄 커밋 후 origin/main 푸시
+
 ## 2026-10-07
 
 ### 기록 데이터 보강 — 내려받기·통계는 웹 처리 (사용자 결정 · DB 구성만 완비)
