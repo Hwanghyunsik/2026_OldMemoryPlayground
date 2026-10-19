@@ -10,7 +10,8 @@ namespace Shinmyeong.Net
     ///   · 명령 조회 5초마다 — `shutdown_requested_at` 이 게임을 켠 시각보다 뒤면 ack 후 종료
     ///   · B2 설정 60초마다 — 소리 크기(1~3) · 음성 안내 여부
     ///   · 발신함(Outbox) 비우기 — 시작 때 · 30초마다 · 기록이 들어온 직후
-    ///   · 401(기기 토큰 거부) — 바로 화면을 바꾸지 않는다(18-1 어르신 화면에 관리 화면 금지). 표시만 해 두고 SCR-001 복귀 때 FlowManager 가 로그인 화면으로 보낸다
+    ///   · 401(기기 토큰 거부) — 플레이 중에는 화면을 바꾸지 않는다(18-1 어르신 화면에 관리 화면 금지). 대기 화면(SCR-001)에 있으면 바로, 아니면 SCR-001 복귀 때 FlowManager 가 로그인 화면으로 보낸다
+    ///   · 종료 — 창을 닫거나 Quit 할 때 마지막 상태 보고(`game_state: "off"`)를 한 번 보내고 끝낸다(최대 2초). 관리자 화면의 「켜져 있음」은 마지막 보고 60초 뒤에 꺼지는데, 이 보고로 즉시 꺼짐 처리를 요청해 두었다(Docs/98)
     /// 플레이 모드가 시작되면 스스로 생긴다(씬 배치 불필요).
     public class DeviceLink : MonoBehaviour
     {
@@ -28,6 +29,7 @@ namespace Shinmyeong.Net
 
         float _nextStatus, _nextCommand, _nextSettings, _nextFlush;
         bool _statusBusy, _commandBusy, _settingsBusy, _flushBusy, _quitting;
+        bool _quitRequested, _finalReported; // 종료 직전 마지막 보고
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -45,11 +47,52 @@ namespace Shinmyeong.Net
             StartedAt = DateTimeOffset.Now;
             TokenRejected = false;
             _nextStatus = _nextCommand = _nextSettings = _nextFlush = 0f; // 시작하자마자 한 번씩
+            Application.wantsToQuit += WantsToQuit;
         }
 
         void OnDestroy()
         {
+            Application.wantsToQuit -= WantsToQuit;
             if (Instance == this) Instance = null;
+        }
+
+        // ---- 종료 직전 마지막 보고 ----
+
+        /// 창 닫기 · Application.Quit — 기기 토큰이 살아 있으면 `game_state: "off"` 를 한 번 보낸 뒤 종료 (최대 2초 · 실패해도 종료)
+        bool WantsToQuit()
+        {
+            if (_finalReported || !DeviceAuth.IsRegistered || TokenRejected) return true;
+            if (!_quitRequested)
+            {
+                _quitRequested = true;
+                ReportOffAndQuit();
+                Invoke(nameof(ForceQuit), 2f);
+            }
+            return false;
+        }
+
+        async void ReportOffAndQuit()
+        {
+            try
+            {
+                var body = new DeviceStatusRequest
+                {
+                    camera_connected = false, person_detected = false, game_state = "off",
+                    app_version = ApiConfig.AppVersion, storage_free_bytes = FreeBytes(), device_time = ApiConfig.NowIso(),
+                };
+                var res = await ApiClient.Put<OkResponse>("devices/me/status", body, DeviceAuth.Token, quiet: true);
+                Debug.Log($"[DeviceLink] 종료 보고 {res}");
+            }
+            catch { }
+            ForceQuit();
+        }
+
+        void ForceQuit()
+        {
+            if (_finalReported) return;
+            _finalReported = true;
+            CancelInvoke(nameof(ForceQuit));
+            Quit();
         }
 
         void Update()
@@ -80,6 +123,14 @@ namespace Shinmyeong.Net
         {
             if (TokenRejected) return;
             TokenRejected = true;
+            var fm = Flow.FlowManager.Instance;
+            if (fm != null && fm.CurrentId == Flow.ScreenId.SCR_001)
+            {
+                // 대기 화면(아무도 없음)이면 기다릴 이유가 없다 — 바로 설치 화면으로 (Go 가 LOGIN 으로 바꿔 준다)
+                Debug.LogWarning("[DeviceLink] 기기 토큰이 거부됨(401) — 대기 화면이라 바로 로그인 화면으로");
+                fm.Go(Flow.ScreenId.SCR_001);
+                return;
+            }
             Debug.LogWarning("[DeviceLink] 기기 토큰이 거부됨(401) — 대기 화면으로 돌아갈 때 로그인 화면으로 보냅니다 (기록은 발신함에 보관)");
         }
 
@@ -131,6 +182,7 @@ namespace Shinmyeong.Net
                 Debug.Log($"[DeviceLink] 프로그램 종료 요청 수신 ({at:HH:mm:ss}) — ack 후 종료");
                 var ack = await ApiClient.Post<OkResponse>("devices/me/commands/ack", new CommandAckRequest(), DeviceAuth.Token);
                 if (!ack.Ok) Debug.LogWarning($"[DeviceLink] 종료 ack 실패 {ack} — 그래도 종료합니다");
+                _finalReported = true; // ack 로 서버가 이미 안다 — 종료 보고 생략
                 Quit();
             }
             finally { _commandBusy = false; }

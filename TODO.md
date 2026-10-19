@@ -94,7 +94,7 @@
   - [x] 3단계 사용자 목록 A1 (2026-10-19) — `Save/ParticipantStore.cs`(서버 → 캐시 participants_cache.json) · SCR-003 캐시 먼저 → 응답 오면 다시 · 에디터 테스트 사용자 버튼 제거 · `FlowManager.UserAvatarIndex` · 플레이 모드에서 서버 2명 카드 확인
   - [x] 4단계 참여 기록 A2 + 발신함 (2026-10-19) — `Net/Outbox.cs`(파일 큐 · 30초 재전송 · 400/404/409 는 rejected/ 보관 · 400+server_time 시계 보정 1회) · `CommitPlay → Outbox → DeviceLink.FlushSoon` · 플레이 모드 커밋 → 즉시 201 확인
   - [x] 5단계 내 기록 A3 (2026-10-19) — `Net/MyRecords.cs` · `RecordsScreen` 서버 응답(전체 limit 20 + 활동별 `?activity=&limit=5`) · 로비 최근 참여(활동별 limit 1) · story_run_id 묶음 · 플레이 모드에서 요약 5일/36분51초 · 활동별 평균·막대 · 최근 5줄 확인
-  - [ ] 6단계 정리 — ✅ SaveStore 캐시 도우미로 축소 · `RecordDatabase` 제거 / 남은 것: 93/93-1/91 문서에 적용 결과 반영 · 실기기(카메라 PC) 1차 확인(camera_connected · 종료 명령 · 서버 불통 시 캐시/발신함 동작) · 미확인 Q1(Unity 연동가이드 파일)·Q5(app_version)
+  - [ ] 6단계 정리 — ✅ SaveStore 캐시 도우미로 축소 · `RecordDatabase` 제거 / 남은 것: 93/93-1/91 문서에 적용 결과 반영 · 실기기(카메라 PC) 1차 확인(camera_connected · 종료 명령 · **빌드 종료 시 `game_state:"off"` 보고** · 서버 불통 시 캐시/발신함 동작) · 미확인 Q1(Unity 연동가이드 파일)·Q5(app_version) · 관리자 팀 「off 보고 → 즉시 꺼짐」 반영 확인(98)
 - [x] Unity 상태 제공 구현 (2026-10-19 `DeviceLink`) — 카메라 연결·사람 인식 상태(B1) · 프로그램 종료 수신(명령 → ack → 종료) · 소리 설정 반영(B2 → AudioListener · 음성 여부는 TTS 도입 시) · 카메라 미리보기 스냅샷은 명세에서 제외 결정
 
 ## 8. 자산 · 마무리
