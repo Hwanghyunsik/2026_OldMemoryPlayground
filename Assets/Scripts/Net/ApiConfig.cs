@@ -39,6 +39,16 @@ namespace Shinmyeong.Net
 
         public static string ConfigPath => Path.Combine(Application.persistentDataPath, "api_config.json");
 
+        /// 관리자 웹 주소 — API 주소에서 `/api` 를 뗀 것 (아이디·비밀번호 찾기 등 웹으로 넘길 때)
+        public static string WebUrl
+        {
+            get
+            {
+                string b = BaseUrl;
+                return b.EndsWith("/api", StringComparison.OrdinalIgnoreCase) ? b.Substring(0, b.Length - 4) : b;
+            }
+        }
+
         /// B1 · A2 의 `app_version` — Player Settings 의 Version (ProjectSettings bundleVersion)
         public static string AppVersion => Application.version;
 

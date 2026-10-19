@@ -16,6 +16,7 @@ namespace Shinmyeong.EditorTools
         const string VideoFolder = "Assets/Video";
         const string EffectFolder = "Assets/Prefabs";
         const string EffectPrefix = "P_"; // 디자이너 파티클 이펙트 프리팹 이름 규칙 (P_Get_Game1 · P_TargetPoint_Game1 …)
+        const string ScreenPrefix = "SCR-"; // 디자이너 화면 레이아웃 프리팹 (SCR-000-Login …)
         const string AssetPath = "Assets/Resources/UiCatalog.asset";
 
         [InitializeOnLoadMethod]
@@ -91,11 +92,23 @@ namespace Shinmyeong.EditorTools
             }
             catalog.Effects.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
 
+            catalog.Screens.Clear();
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { EffectFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!Path.GetFileName(path).StartsWith(ScreenPrefix))
+                    continue;
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab != null)
+                    catalog.Screens.Add(prefab);
+            }
+            catalog.Screens.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
             if (created)
                 AssetDatabase.CreateAsset(catalog, AssetPath);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
-            Debug.Log($"[UiCatalog] 재생성 — 스프라이트 {catalog.Sprites.Count} · 폰트 {catalog.Fonts.Count} · 영상 {catalog.Videos.Count} · 이펙트 {catalog.Effects.Count}");
+            Debug.Log($"[UiCatalog] 재생성 — 스프라이트 {catalog.Sprites.Count} · 폰트 {catalog.Fonts.Count} · 영상 {catalog.Videos.Count} · 이펙트 {catalog.Effects.Count} · 화면 {catalog.Screens.Count}");
         }
 
         class Watcher : AssetPostprocessor
@@ -106,7 +119,7 @@ namespace Shinmyeong.EditorTools
                 foreach (var list in new[] { imported, deleted, moved, movedFrom })
                     foreach (var p in list)
                         if (p.StartsWith(SpriteFolder + "/") || p.StartsWith(FontFolder + "/") || p.StartsWith(VideoFolder + "/")
-                            || (p.StartsWith(EffectFolder + "/") && Path.GetFileName(p).StartsWith(EffectPrefix)))
+                            || (p.StartsWith(EffectFolder + "/") && (Path.GetFileName(p).StartsWith(EffectPrefix) || Path.GetFileName(p).StartsWith(ScreenPrefix))))
                             hit = true;
                 if (hit)
                     EditorApplication.delayCall += Rebuild;

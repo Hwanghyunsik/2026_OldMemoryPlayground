@@ -6,7 +6,7 @@ namespace Shinmyeong.UI
 {
     /// 디자인 자산 창구 — `Assets/UI Image/*.png`(UI 스프라이트)와 `Assets/Font/*.OTF`(S-Core Dream)를
     /// 에디터가 자동으로 모아 `Resources/UiCatalog.asset`에 담는다(Editor/UiCatalogBuilder).
-    /// `Assets/Video/**/*.mp4`(스토리·튜토리얼 영상)·`Assets/Prefabs/P_*.prefab`(파티클 이펙트)도 같은 창구로 모은다.
+    /// `Assets/Video/**/*.mp4`(스토리·튜토리얼 영상)·`Assets/Prefabs/P_*.prefab`(파티클 이펙트)·`Assets/Prefabs/SCR-*.prefab`(디자이너 화면 레이아웃)도 같은 창구로 모은다.
     /// 런타임 코드는 파일명(확장자 없음)으로 스프라이트·영상을 찾는다 — 디자이너가 파일을 갱신하면 재생성만 하면 된다.
     public class UiCatalog : ScriptableObject
     {
@@ -28,6 +28,8 @@ namespace Shinmyeong.UI
         public List<Font> Fonts = new List<Font>();
         public List<VideoEntry> Videos = new List<VideoEntry>();
         public List<GameObject> Effects = new List<GameObject>();
+        /// 디자이너가 만든 화면 레이아웃 프리팹(`SCR-000-Login` …) — 코드가 인스턴스화한 뒤 입력·버튼 동작만 붙인다
+        public List<GameObject> Screens = new List<GameObject>();
 
         static UiCatalog _instance;
         static bool _loaded;
@@ -35,6 +37,7 @@ namespace Shinmyeong.UI
         Dictionary<string, Font> _fontMap;
         Dictionary<string, VideoClip> _videoMap;
         Dictionary<string, GameObject> _effectMap;
+        Dictionary<string, GameObject> _screenMap;
 
         public static UiCatalog Instance
         {
@@ -85,6 +88,18 @@ namespace Shinmyeong.UI
                         _effectMap[e.name] = e;
             }
             return _effectMap.TryGetValue(name, out var go) ? go : null;
+        }
+
+        public GameObject FindScreen(string name)
+        {
+            if (_screenMap == null)
+            {
+                _screenMap = new Dictionary<string, GameObject>();
+                foreach (var e in Screens)
+                    if (e != null)
+                        _screenMap[e.name] = e;
+            }
+            return _screenMap.TryGetValue(name, out var go) ? go : null;
         }
 
         public Font FindFont(string name)

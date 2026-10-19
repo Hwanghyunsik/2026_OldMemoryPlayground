@@ -68,6 +68,13 @@
 - 수정 `DeviceLink.IsPrePlay`: 401 즉시 전환 대상을 **게임 전 화면 5개(SCR-001~005)** 로 확대 — 연결 끊긴 기기는 어차피 다음 단계(사용자 목록·기록)가 안 되므로. 게임·결과·영상·기록 보기(SCR-006~023) 중에는 기존대로 SCR-001 복귀 때
 - 확인: 사용자가 관리자 웹 「연결 해제」 → 게임이 로그인 화면으로 전환되는 것 확인 완료 (2026-10-19 16:40)
 
+### 로그인 화면을 디자이너 프리팹 SCR-000-Login 으로 교체 · 「아이디/비밀번호 찾기」 → 관리자 웹
+- `UiCatalog.Screens` + `FindScreen` 신설 · `UiCatalogBuilder` 가 `Assets/Prefabs/SCR-*.prefab` 을 자동 수집(감시 포함) → 재생성 결과 「화면 1」
+- `LoginScreen` 재작성: 프리팹을 인스턴스화하고 `MainPanel/Input/ID/Input_ID`·`PW/Input_ID` 흰 상자에 InputField · `BT_Login` 에 Button · `ID_PW`(아이디/비밀번호 찾기) 에 Button → `Application.OpenURL(ApiConfig.WebUrl)` · 안내 문구 `Status` 는 패널 아래쪽에 코드로 추가 · 프리팹이 없으면 예전 코드 레이아웃으로 대체
+- `ApiConfig.WebUrl` = API 주소에서 `/api` 를 뗀 관리자 웹 주소(지금 `https://dev.joylab.kr:33780`) — 서버 설정을 바꾸면 같이 따라간다
+- 검증: 컴파일 0/0 · 플레이 모드 LOGIN 에 Design 1920×1080 중앙 배치 · 입력 2 · 버튼 2 · 테스트 계정으로 버튼 클릭 → DEVICE_SELECT(운영자 진명희 · 신명복지관). 찾기 링크 클릭은 브라우저가 열리므로 사용자 확인
+- 프리팹 구조(경로 이름)가 바뀌면 `LoginScreen.Find` 가 콘솔 오류로 알려 준다
+
 ## 2026-10-08
 
 ### 서버 데이터 설계를 MongoDB 형식으로 변경 (사용자 결정)
