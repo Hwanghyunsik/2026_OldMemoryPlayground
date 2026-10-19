@@ -115,6 +115,10 @@ namespace Shinmyeong.Net
             if (Instance != null) Instance._nextStatus = Instance._nextCommand = Instance._nextSettings = Instance._nextFlush = 0f;
         }
 
+        /// 게임 전 화면 — 401 을 받으면 바로 설치 화면으로 보내도 되는 화면 (플레이 · 결과 · 영상 · 기록 보기는 제외)
+        static bool IsPrePlay(Flow.ScreenId id) =>
+            id == Flow.ScreenId.SCR_001 || id == Flow.ScreenId.SCR_002 || id == Flow.ScreenId.SCR_003 || id == Flow.ScreenId.SCR_004 || id == Flow.ScreenId.SCR_005;
+
         /// FlowManager 가 로그인 화면으로 보낸 뒤 호출 — 표시를 지운다
         public static void ClearRejected() => TokenRejected = false;
 
@@ -124,10 +128,11 @@ namespace Shinmyeong.Net
             if (TokenRejected) return;
             TokenRejected = true;
             var fm = Flow.FlowManager.Instance;
-            if (fm != null && fm.CurrentId == Flow.ScreenId.SCR_001)
+            if (fm != null && IsPrePlay(fm.CurrentId))
             {
-                // 대기 화면(아무도 없음)이면 기다릴 이유가 없다 — 바로 설치 화면으로 (Go 가 LOGIN 으로 바꿔 준다)
-                Debug.LogWarning("[DeviceLink] 기기 토큰이 거부됨(401) — 대기 화면이라 바로 로그인 화면으로");
+                // 게임 전 화면(대기 · 감지 · 사용자/모드 선택 · 로비)이면 기다릴 이유가 없다 — 연결이 끊긴 기기는 어차피 다음 단계가 안 된다.
+                // 바로 설치 화면으로 (Go(SCR_001) 이 LOGIN 으로 바꿔 준다). 게임·결과·영상 중에는 복귀 때까지 기다린다(18-1)
+                Debug.LogWarning($"[DeviceLink] 기기 토큰이 거부됨(401) — {fm.CurrentId} 는 게임 전 화면이라 바로 로그인 화면으로");
                 fm.Go(Flow.ScreenId.SCR_001);
                 return;
             }
