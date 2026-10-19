@@ -1,16 +1,16 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
+using Shinmyeong.Net;
 using Shinmyeong.Save;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Flow.Screens
 {
-    /// 운영자 로그인 (기획 화면 코드 없음 · 93 문서 D1) — **더미**. 성공하면 기기 선택(DEVICE_SELECT)으로 간다.
+    /// 운영자 로그인 (기획 화면 코드 없음 · 명세 D1 `POST auth/login`). 성공하면 기기 선택(DEVICE_SELECT)으로 간다.
     /// 설치 때 운영자가 한 번만 보는 관리 화면이라 어르신 조작(dwell)이 아니라 키보드·마우스로 입력한다.
     /// 기기가 연결된 PC는 실행 시 이 화면을 건너뛴다. Tab = 다음 칸 · Enter = 로그인.
     public class LoginScreen : ScreenBase
@@ -35,8 +35,7 @@ namespace Shinmyeong.Flow.Screens
             _status = UiKit.Txt(panel, "Status", 0, 392, 800, 30, "", 24, 5, Skin.Orange);
             AdminUi.Button(panel, "LoginButton", 250, 450, 300, 84, "로그인", Skin.Green, Color.white, Submit);
 
-            UiKit.Footer(transform, $"더미 계정: {DeviceAuth.DummyUsername} / {DeviceAuth.DummyPassword} (서버 연동 전)",
-                660, 912, 600, 50, 22);
+            UiKit.Footer(transform, $"서버: {ApiConfig.BaseUrl}", 460, 912, 1000, 50, 22);
         }
 
         protected override void OnEnter()
@@ -73,25 +72,31 @@ namespace Shinmyeong.Flow.Screens
                 Focus(string.IsNullOrEmpty(_username.text) ? _username : _password);
                 return;
             }
-            StartCoroutine(LoginRoutine());
+            RunLogin();
         }
 
-        IEnumerator LoginRoutine()
+        async void RunLogin()
         {
             _busy = true;
             _status.color = Skin.Muted;
             _status.text = "확인하고 있습니다…";
-            yield return new WaitForSeconds(0.6f); // 서버 응답 대기 흉내
-            if (DeviceAuth.Login(_username.text, _password.text))
+            var res = await DeviceAuth.Login(_username.text, _password.text);
+            if (Flow.CurrentId != Id)
+                return; // 기다리는 사이 화면이 바뀜
+            if (res.Ok)
             {
                 Flow.Go(ScreenId.DEVICE_SELECT);
-                yield break;
+                return;
             }
             _busy = false;
             _status.color = Skin.Orange;
-            _status.text = "아이디 또는 비밀번호를 다시 확인해 주세요";
-            _password.text = "";
-            Focus(_password);
+            // 401 틀림 · 403 막힌 계정/정지된 기관/전체관리자 · 429 잠시 잠김 — 서버 message 는 화면에 그대로 보여도 되는 한국어(명세 공통)
+            _status.text = res.Unreachable ? "서버에 연결할 수 없습니다. 네트워크를 확인해 주세요"
+                : res.Status == 401 ? "아이디 또는 비밀번호를 다시 확인해 주세요"
+                : res.Message;
+            if (res.Status == 401)
+                _password.text = "";
+            Focus(res.Status == 401 ? _password : _username);
         }
 
         static void Focus(InputField field)

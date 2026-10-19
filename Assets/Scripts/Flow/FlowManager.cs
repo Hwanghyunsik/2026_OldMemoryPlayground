@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Shinmyeong.Flow.Screens;
+using Shinmyeong.Net;
 using Shinmyeong.Save;
 
 namespace Shinmyeong.Flow
@@ -16,6 +17,10 @@ namespace Shinmyeong.Flow
         public string UserId = "";
         public string UserName = "";
         public bool IsGuest = true;
+        /// 고른 사용자의 그림 번호(0~7 · 비회원/미선택 -1) — 헤더 아바타용 (서버 A1 avatar_index)
+        public int UserAvatarIndex = -1;
+        /// 스토리 한 판(수확→장보기→요리)을 묶는 UUID — SCR-004 에서 스토리를 고를 때 새로 만든다 (서버 A2 story_run_id)
+        public string StoryRunId = "";
 
         /// 스토리 모드 게임별 성공 횟수 — SCR-022 잔치상 판정 입력(9-1). 비회원도 판정은 필요하다
         public readonly Dictionary<string, int> StorySuccess = new Dictionary<string, int>();
@@ -132,6 +137,16 @@ namespace Shinmyeong.Flow
                 Debug.LogWarning($"[Flow] 미등록 화면: {id} — 이동 무시");
                 return;
             }
+            if (id == ScreenId.SCR_001 && DeviceLink.TokenRejected)
+            {
+                // 기기 토큰이 거부된 상태(관리자 웹에서 연결 해제 · 다른 PC 로 옮김) — 어르신 화면 중에는 바꾸지 않고(18-1)
+                // 대기 화면으로 돌아오는 이 시점에 설치 화면(운영자 로그인)으로 보낸다. 못 보낸 기록은 발신함에 남아 있다
+                DeviceAuth.Clear();
+                DeviceLink.ClearRejected();
+                id = ScreenId.LOGIN;
+                next = _screens[id];
+                Debug.Log("[Flow] 기기 연결이 끊겨 설치 화면으로");
+            }
 
             PausePopup.CloseIfOpen(); // 화면이 바뀌면 일시정지 상태를 남기지 않는다
             // 마우스는 관리 화면(로그인·기기 선택 — 키보드·마우스 입력)에서만 보인다 — 이후 게임은 손 커서만 쓴다
@@ -172,16 +187,19 @@ namespace Shinmyeong.Flow
             Mode = GameMode.Free;
             UserId = "";
             UserName = "";
+            UserAvatarIndex = -1;
             IsGuest = true;
+            StoryRunId = "";
             StorySuccess.Clear();
             _history.Clear();
         }
 
-        /// 게임 10라운드 완주 시 참여 기록 저장 창구.
+        /// 게임 10라운드 완주 시 참여 기록 저장 창구 — 발신함(Outbox)에 넣고 DeviceLink 가 서버 A2 로 보낸다(실패 시 30초마다 재전송).
         /// 비회원은 저장하지 않는다(03 문서 6-1 확정) · 중도 종료는 게임이 커밋 자체를 하지 않는다(6-2)
         public void CommitPlay(PlayRecord record)
         {
             record.Mode = Mode.ToString();
+            record.StoryRunId = Mode == GameMode.Story ? StoryRunId : "";
             if (Mode == GameMode.Story)
                 StorySuccess[record.Activity] = record.SuccessCount; // 잔치상 판정용 — 저장 여부와 무관
             if (IsGuest || string.IsNullOrEmpty(UserId))
@@ -189,7 +207,8 @@ namespace Shinmyeong.Flow
                 Debug.Log("[Save] 비회원 — 참여 기록 저장 안 함 (확정)");
                 return;
             }
-            SaveStore.AppendRecord(UserId, record);
+            if (Outbox.Enqueue(record, UserId) && DeviceLink.Instance != null)
+                DeviceLink.Instance.FlushSoon();
         }
     }
 }

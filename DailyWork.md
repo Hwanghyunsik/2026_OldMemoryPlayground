@@ -2,6 +2,59 @@
 
 > 룰: CLAUDE.md 「작업 기록」 참조. 최신 날짜가 위로 오게 기록한다.
 
+## 2026-10-19
+
+### 서버 API 명세 수령 → 적용 준비 (`Docs/신명놀이터_API.md` · 관리자 웹 팀 2026-10-16)
+- 명세 정독 후 게임 호출 10개(D1~D3 · A1~A3 · B1 · B2 · 명령)를 현재 코드와 대조하고 적용 순서 6단계·요청 8건 대응·미확인 7건을 `Docs/94_API_적용_준비.md`로 정리. 명세는 모든 경로가 `/api/…`, 성공/실패 JSON 봉투, 시간대 필수 ISO, A2 멱등(같은 UUID 재전송) · 활동별 rounds 10개 고정
+- 호출 계층 신설 `Assets/Scripts/Net/`: `ApiConfig`(기본 `https://dev.joylab.kr:33780/api` · 인자 `-api` · `api_config.json` · 주기 상수) · `ApiClient`(UnityWebRequest + Awaitable · Bearer · 실패 봉투 해석 · Retryable 구분) · `ApiModels`(명세 snake_case DTO · A2 본문은 활동별 3클래스 — JsonUtility 다형 불가) · `PlaySessionMapper`(PlayRecord → A2: 활동/모드 소문자 · 수확 결과 한글→target/other/bug · 로컬 시각→+09:00 ISO · 장보기 평탄 기록→라운드별 items seq · 요리 picks seq)
+- 기록 모델 보강: `PlayRecord.SessionId`(시작 시 UUID) · `PlayRecord.StoryRunId`(SCR-004 스토리 선택 시 `FlowManager.StoryRunId` 생성 → CommitPlay 가 채움) · `HarvestRoundRecord.RoundSec`(명세 4-8 요청 2) · `DeviceAuth.Token`
+- 에디터 메뉴 `Shinmyeong/API/`: 「로컬 기록 → A2 본문 미리보기」 · 「서버 연결 확인(GET auth/login → 405 기대)」
+- 검증: 컴파일 오류·경고 0 · 미리보기로 로컬 테스트 기록 3종(수확·장보기·요리)이 명세 1-8 모양으로 변환됨(장보기 20재료 → 10라운드 items 1~3 · 요리 picks seq) · 개발 서버 실호출 → `405 「이 경로는 POST 만 받습니다」` JSON 봉투 수신(주소·HTTPS 인증서 정상)
+- 확인 필요(94 문서 5장): 명세가 가리키는 `신명놀이터_Unity_연동가이드.md`·`unity/Shinmyeong.Api` 스크립트 수령 여부(Q1) · 개발 서버 테스트 계정·기기(Q2) · A3 limit(활동별 최근 5회는 50건 필요 · Q4) · app_version 체계 0.1.0(Q5) · 카드색 8색 대조(Q6)
+- 다음: 94 문서 3장 1단계(설치 D1~D3 실호출)부터 — 테스트 계정 확인 후
+
+### 명세 ↔ 우리 기준(07 기획 확정 · 게임 코드) 대조 → 회신 문서 (사용자 요청: 우리 기준으로 맞추되 관리자도 읽을 수 있게)
+- 원칙: A2 본문은 명세 호환 유지(필드 추가만) · 계산 규칙은 서버 수정 요청. `Docs/95_API_회신_관리자웹팀.md` 작성(공유용 · 4-8 답변 7건 + 수정 요청 R1~R6 + 정의 안내 + 확인 부탁 2건)
+- 명세가 기획과 다른 것: **R1** 장보기 ADM 1번 지표 「제대로 산 재료」는 재료 단위(18-3-1 · 5-14 #8 · 최대 20)인데 명세는 라운드 단위 — 단 `success_count`(A3 · 잔치상)는 라운드 단위 유지(5-14 #9) · **R2** 요리 3번 지표 「재료가 달랐던 음식」은 라운드 단위(18-3-1)인데 명세는 재료 수 — 우리 ERD 93-1 §4 정의가 맞았음 · **R3** 장보기 도움 횟수에 중앙 복귀 유도 힌트가 빠짐(서버가 items 합만 재계산) · **R4** A3 `limit` 만으로는 SCR-023 활동별 최근 5회(8-5)를 못 냄 → `?activity=`/`per_activity` 요청, 그 전까지 limit=50 · **R5** 카드색 8색이 명세 색표와 게임 시안이 달라 관리자 화면을 시안 색으로 통일 요청 · **R6** `started_at` 1시간 초과 미래 400 은 시설 PC 시계 오류 시 기록 영구 유실 → 저장+경고 요청
+- 일치 확인: `success_count` 3종 · 수확 다른 선택(other+bug) · 장보기 arrive_sec 평균·다르게 산 재료 수 · 요리 첫 재료 반응·review 별개 · 끝내기(프로그램 종료만 사용자 화면) · 삭제 시 기록 삭제 · 비회원/중도 종료 미기록
+- 게임 반영(R3): `PlayRecord.ShoppingRoundHints`(라운드별 복귀 유도 힌트 수 · `ShoppingDemo` 기록) · `ShoppingRoundDto.hint_count` · 매퍼 반영. 컴파일 오류 0
+- 설계 메모: 기기 토큰 401 은 플레이 중 로그인 화면으로 전환하지 않고 SCR-001 복귀 때 처리(18-1) — 2단계에서 구현. 94 문서 2-2 표의 잘못된 「장보기 일치」 판단 정정 · 7장 신설
+- 다음: 95 문서를 관리자 웹 팀에 전달 → 반영 확인
+
+### 설치 흐름 D1~D3 실호출 전환 · 개발 서버 기초 테스트 (94 문서 3장 1단계)
+- `Save/DeviceAuth.cs` 재작성: 더미 제거 → `ApiClient` 로 D1 `auth/login`(운영자 토큰·만료는 메모리에만) · D2 `devices` → `LastDevices` · D3 `devices/{id}/token`(201 → PlayerPrefs 저장 · 409 `InUse`) · `Clear`(연결 해제). 모두 `Awaitable<ApiResult<…>>`
+- `LoginScreen`: 코루틴 흉내 → 실호출. 401 「아이디 또는 비밀번호를 다시 확인해 주세요」+비밀번호 지움 · 403/429 는 서버 `message` 그대로(예: 「여러 번 틀려서 잠시 막았습니다 · 12초 뒤에…」) · 서버 불통 안내 · 푸터에 서버 주소. `DeviceSelectScreen`: 목록 비동기 로드(불러오는 중 → 목록/오류) · 선택 확정 비동기 · 409 in_use 면 사용 중으로 바꾸고 「이 PC로 옮기기」 확인 단계 · 운영자 토큰 401 이면 로그인으로. 두 화면 모두 기다리는 사이 화면이 바뀌면 결과 무시
+- 에디터 메뉴 `Shinmyeong/API/기초 테스트`: `persistentDataPath/api_config.json` 의 `test_username`·`test_password`·`test_device` 로 D1→D2→[D3]→A1·B2·명령·B1 을 한 번에 호출해 결과 출력(사용 중 기기는 빼앗지 않음). 명세 기본 계정 `manager/manager1234` 는 개발 서버에 없음 — 401 → 5회째 429 잠금(60초)까지 실제로 확인
+- 검증(사용자 제공 계정 `shin1234` · 비밀번호는 설정 파일에만): 플레이 모드 로그인 화면에서 D1 200(운영자 진명희 · 기관 신명복지관) → 기기 선택 화면 D2 200(「1층」 1대 · 비어 있음 · 자동 선택) → 「이 기기로 시작」 D3 201(`dev_…` 47자 저장 · 교체 false) → SCR-001 · 마우스 커서 숨김. 이어서 에디터 기초 테스트: A1 200(사용자 2명 김명희 F 그림0 색0 · 조복순 F 그림1 색1) · B2 200(소리 1 · 음성 켬 · 기기 1층) · 명령 200(종료 요청 없음) · B1 200. 두 번째 실행에서 D2 의 「1층」이 사용 중으로 표시됨(이 PC 토큰)
+- 콘솔 로그 누락 경험: 기초 테스트 결과를 LogWarning 한 건으로만 찍었을 때 MCP 콘솔 조회에 안 잡혀 시작·D1 응답 Log 를 따로 추가함
+- 다음: 94 문서 3장 2단계 `DeviceLink`(B1 5초 · 명령 5초 · B2 60초 · 401 처리) → 3단계 A1 사용자 목록(SCR-003)
+
+### 게임 시뮬레이션 — 참여 기록 A2 전송·A3 되읽기 (사용자 요청: 관리자 화면에서 데이터 확인용)
+- `Net/PlaySessionUploader.cs` 신설(실제 전송 창구): A2 결과를 Stored(201) · Duplicate(200) · Rejected(400/404/409 · 재시도 금지) · Unauthorized(401) · Retry(네트워크·5xx·429) 로 분류 — 4단계 발신함이 이 분류를 쓴다
+- 에디터 메뉴 `Shinmyeong/API/게임 시뮬레이션`(`Editor/ApiSimulation.cs`): A1 사용자마다 게임 규칙대로 만든 기록 7건(2일 전 스토리 1판 3종 = 같은 story_run_id · 개별 4판 최근 7일 · 사람마다 성공률 60%/90%)을 실제 변환기(`PlaySessionMapper`)로 A2 전송 · 사이사이 B1 로 game_state(SCR_003→SCR_008…→SCR_001) 보고 · 마지막 본문 재전송으로 멱등 확인 · `A3 되읽기` 메뉴 분리(콘솔 한 항목이 길면 잘림)
+- 결과(개발 서버 · 기관 신명복지관 · 기기 1층): 김명희·조복순 각 7건 **14건 전부 201 저장** · 재전송 200 `duplicate:true` · A3 각 참여 7회 · 함께한 날 5일 · 활동 1106/1086초(= duration 합) · 스토리 3종이 같은 story_run_id 로 묶임 · 서버 `success_count` 14건 모두 게임 값과 일치
+- **실측으로 확인된 서버 차이**: 장보기 `hint_count` 가 서버 재계산에서 작게 나옴(김명희 개별 12→6 · 조복순 스토리 8→7 · 개별 7→3) = 라운드 수준 복귀 유도 힌트 무시 → 수정 요청 3번 근거로 기재
+- 문서: **`Docs/96_API_수정요청_관리자웹팀.md`** 신설(사용자 요청 — 고쳐야 할 것 6건만 우선순위·실측 근거와 함께 · 전달용) · 95 는 전체 회신으로 유지
+- 다음: 관리자 웹(dev.joylab.kr:33780)에서 사용자 2명의 기록·통계가 보이는지 사용자 확인 → 2단계 `DeviceLink`
+
+### 관리자 웹 팀 회신(97) 반영 — 수정 요청 6건 전부 서버 반영 확인 · 확인 회신 98
+- `Docs/97_API_회신_게임팀.md` 수령(14시 dev 반영): R1~R6 모두 반영 + A3 `?activity=…&limit=5` · `sessions[].accuracy_count`·`avg_reaction_sec` · 응답 `activity` · A2 `clock_suspect`/`server_time`(1시간 초과 미래는 저장 · 7일 초과만 400 · 모든 400 에 `server_time`)
+- 코드: `ApiModels`(새 필드 5개 · `ApiErrorBody.server_time`) · `ApiClient.ApiResult.ServerTime` · `PlaySessionUploader` clock_suspect 경고 · `ApiSimulation` 서버 재계산 불일치 자동 대조 + A3 되읽기에 활동별 3회 호출 추가 · 컴파일 0/0
+- 재확인(15:11 시뮬레이션 재전송 · 새 id 14건): 장보기 `hint_count` 4건 모두 게임 값과 일치(김명희 개별 12 · 조복순 스토리 8 · 개별 7) · 14건 `success_count`/`hint_count` 불일치 0 · `?activity=` 세 값 모두 해당 활동만 · `summary` 전체 기준 유지 · `accuracy_count` 장보기 14/12/18/17
+- 97 「주의 2」로 **장보기 재료 총량 불일치 재확인**: 게임은 07 5-6 표대로 21개 전송(R1~2 1 · R3~4 2 · R5~7 2 · R8~10 3), 07 본문·요약표는 20 — 2026-08-26 기획 Q2 미회신. 96 에 「20」이라 쓴 것은 오기 → 96 머리말에 정정 표시
+- 문서: **`Docs/98_API_확인회신_관리자웹팀.md`** 신설(전달용 — (나) 새 id 재전송 · 12시 수신분 14건 삭제 요청 · 총량 21 설명과 「실제 재료 수 분모」 요청 · 재확인 표 · Unity 가이드 v2.2 파일 공유 요청) · 94 문서 7장 ✅ · Q1·Q4 · 3장 5단계 갱신
+- 다음: 98 전달 → 옛 14건 삭제 확인 → 2단계 `DeviceLink` 착수. 기획 Q2 회신 오면 `TargetCount` 조정 여부 결정
+
+### 서버 연동 2~5단계 — 게임 본편이 서버를 쓴다 (94 문서 3장 · 사용자 「진행해」)
+- **2단계 `Net/DeviceLink.cs`**: 플레이 시작 시 자동 생성(`RuntimeInitializeOnLoadMethod`) · B1 상태 보고 5초(카메라 = MoveNet 실행 중 · 사람 인식 · 현재 ScreenId · 버전 · 남은 용량 · PC 시각) · 명령 5초(`shutdown_requested_at` > 켠 시각 → ack → 종료) · B2 60초(소리 1~3 → `AudioListener.volume` 0.4/0.7/1.0 · 음성 여부 보관) · 발신함 30초. 주기 호출은 `ApiClient` `quiet` 로 콘솔 소음 없이, 연결 상태 바뀔 때만 로그
+- **401 처리**: `ApiClient` 가 기기 토큰 호출의 401 을 `DeviceLink.NoteUnauthorized()` 로 표시 → `FlowManager.Go(SCR_001)` 시점에 `DeviceAuth.Clear()` 후 로그인 화면 (18-1 · 플레이 중 전환 없음 · 발신함 보존). 기기 새로 연결하면 `DeviceLink.OnDeviceLinked()` 로 재개
+- **3단계 `Save/ParticipantStore.cs`**: A1 → `UserProfile` · `SaveData/participants_cache.json`. SCR-003 은 캐시로 먼저 그리고 응답 오면 다시(실패 시 캐시 유지 · 캐시도 없으면 중립 안내). 에디터 「+ 테스트 사용자」 제거 · 헤더 아바타는 `FlowManager.UserAvatarIndex`
+- **4단계 `Net/Outbox.cs`**: `CommitPlay → Outbox.Enqueue(A2 본문 파일) → DeviceLink.FlushSoon()`. 201/200 삭제 · 400/404/409 → `Outbox/rejected/` + 사유 파일 · 401/네트워크/5xx/429 는 멈춤(순서 보존). 400 에 `server_time` 과 `started_at` issue 가 있으면 시계 차이만큼 보정해 1회 재전송(R6)
+- **5단계 `Net/MyRecords.cs`**: `RecordsScreen` 전면 서버 응답(전체 `limit=20` 로 요약·최근 5줄 · 활동별 `?activity=&limit=5` 3회 · `story_run_id` 로 스토리 묶음 · 늦은 응답은 seq 로 버림 · 실패 시 「지금은 기록을 불러올 수 없어요」) · `LobbyScreen` 최근 참여는 활동별 `limit=1`
+- **6단계(일부)**: `SaveStore` 를 `LoadJson/WriteJson` 캐시 도우미로 축소 · `RecordDatabase` 제거 · 에디터 메뉴 「로컬 기록 미리보기」 → 「발신함 보기 · 지금 보내기」
+- 검증(플레이 모드 · 개발 서버 · 기기 1층): 컴파일 0/0 · `DeviceLink` 「서버 연결됨 · 설정 소리 1 음성 켬」 · SCR-003 서버 2명 카드(김명희·조복순) · 로비 최근 참여 3칸(10/18 · 10/17 · 10/19) · SCR-023 요약 5일/36분 51초/10월 19일 · 활동별 평균 6/3/5 + 막대 5/4/4 · 최근 5줄 · **수확 1판 커밋 → 발신함 1건 → 즉시 A2 201(서버 성공 7 = 게임) → 0건**
+- 남은 것: 93/93-1/91 문서 반영 · 실기기(카메라 PC) 확인(camera_connected · 종료 명령 · 서버 불통 시 캐시/발신함) · 98 의 「남은 것」에 15:37 수확 1건 추가 기재
+
 ## 2026-10-08
 
 ### 서버 데이터 설계를 MongoDB 형식으로 변경 (사용자 결정)

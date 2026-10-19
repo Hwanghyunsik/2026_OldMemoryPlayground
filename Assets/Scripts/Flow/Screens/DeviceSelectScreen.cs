@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Shinmyeong.Net;
 using Shinmyeong.Save;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Flow.Screens
 {
-    /// 기기 선택 (기획 화면 코드 없음 · 93 문서 D2·D3) — **더미**. 운영자 로그인 다음 화면.
+    /// 기기 선택 (기획 화면 코드 없음 · 명세 D2 `GET devices` · D3 `POST devices/{id}/token`). 운영자 로그인 다음 화면.
     /// 관리자 웹에 등록된 기관의 기기 중 이 PC가 맡을 1대를 고른다(기기 생성은 관리자 웹 몫).
     /// 목록에서 고르고 「이 기기로 시작」으로 확정 → SCR-001.
     /// 다른 PC가 쓰는 기기(「다른 PC에서 사용 중」)는 확인 단계를 한 번 더 거쳐야 옮긴다 — 공유본 5-1
@@ -21,9 +22,10 @@ namespace Shinmyeong.Flow.Screens
         Text _startLabel;
         Image _startFace;
         readonly List<(Image face, Text label, Text tag)> _rows = new List<(Image, Text, Text)>();
-        IReadOnlyList<DeviceInfo> _devices;
+        IReadOnlyList<DeviceInfo> _devices = new List<DeviceInfo>();
         int _selected = -1;
         bool _confirmPending; // 사용 중인 기기 — 한 번 더 눌러야 옮긴다
+        bool _busy;
 
         protected override void BuildUi()
         {
@@ -53,7 +55,32 @@ namespace Shinmyeong.Flow.Screens
                 Flow.Go(ScreenId.LOGIN); // 로그인 없이 들어올 수 없다
                 return;
             }
-            _devices = DeviceAuth.LoadDevices();
+            _devices = new List<DeviceInfo>();
+            RebuildRows();
+            Select(-1);
+            _empty.text = "기기 목록을 불러오고 있습니다…";
+            LoadList();
+        }
+
+        async void LoadList()
+        {
+            _busy = true;
+            var res = await DeviceAuth.LoadDevices();
+            _busy = false;
+            if (Flow.CurrentId != Id)
+                return;
+            if (res.Status == 401)
+            {
+                Flow.Go(ScreenId.LOGIN); // 운영자 토큰 만료(30분)
+                return;
+            }
+            if (!res.Ok)
+            {
+                _empty.text = res.Unreachable ? "서버에 연결할 수 없습니다\n네트워크를 확인한 뒤 다시 로그인해 주세요" : res.Message;
+                return;
+            }
+            _devices = DeviceAuth.LastDevices;
+            _empty.text = "등록된 기기가 없습니다\n관리자 웹에서 기기를 먼저 등록해 주세요";
             RebuildRows();
             Select(_devices.Count == 1 ? 0 : -1);
         }
@@ -106,22 +133,58 @@ namespace Shinmyeong.Flow.Screens
 
         void Confirm()
         {
-            if (_selected < 0)
+            if (_selected < 0 || _busy)
                 return;
             var device = _devices[_selected];
             if (device.InUse && !_confirmPending)
             {
-                // 확인 단계 — 실수로 다른 PC의 연결을 끊지 않게 한 번 더 누르게 한다
-                _confirmPending = true;
-                _notice.color = Skin.Orange;
-                _notice.text = $"「{device.Name}」을(를) 이 PC로 옮길까요? 기존 PC는 연결이 끊어집니다.\n옮기려면 아래 버튼을 한 번 더 눌러 주세요.";
-                _startFace.color = Skin.Orange;
-                _startLabel.text = "이 PC로 옮기기";
+                AskReplace(device);
                 return;
             }
-            if (!DeviceAuth.SelectDevice(device, replace: _confirmPending))
+            RunSelect(device, replace: _confirmPending);
+        }
+
+        /// 확인 단계 — 실수로 다른 PC의 연결을 끊지 않게 한 번 더 누르게 한다
+        void AskReplace(DeviceInfo device)
+        {
+            _confirmPending = true;
+            _notice.color = Skin.Orange;
+            _notice.text = $"「{device.Name}」을(를) 이 PC로 옮길까요? 기존 PC는 연결이 끊어집니다.\n옮기려면 아래 버튼을 한 번 더 눌러 주세요.";
+            _startFace.color = Skin.Orange;
+            _startLabel.text = "이 PC로 옮기기";
+        }
+
+        async void RunSelect(DeviceInfo device, bool replace)
+        {
+            _busy = true;
+            _startFace.color = Skin.Track;
+            _notice.color = Skin.Muted;
+            _notice.text = "기기를 연결하고 있습니다…";
+            var res = await DeviceAuth.SelectDevice(device, replace);
+            _busy = false;
+            if (Flow.CurrentId != Id)
                 return;
-            Flow.Go(ScreenId.SCR_001);
+            if (res.Ok)
+            {
+                Flow.Go(ScreenId.SCR_001);
+                return;
+            }
+            if (res.Status == 401)
+            {
+                Flow.Go(ScreenId.LOGIN); // 운영자 토큰 만료
+                return;
+            }
+            _startFace.color = Skin.Green;
+            if (res.Status == 409 && res.InUse)
+            {
+                // 목록을 받은 뒤 다른 PC가 먼저 연결했다 — 사용 중으로 바꾸고 확인 단계로
+                var d = device; d.InUse = true;
+                var list = new List<DeviceInfo>(_devices); list[_selected] = d; _devices = list;
+                AskReplace(d);
+                return;
+            }
+            _notice.color = Skin.Orange;
+            _notice.text = res.Unreachable ? "서버에 연결할 수 없습니다. 네트워크를 확인해 주세요" : res.Message;
         }
     }
 }

@@ -153,6 +153,7 @@ namespace Shinmyeong.Games.Harvest
 
         IEnumerator RunRound(int round)
         {
+            float roundStartTime = Time.time; // 기록 round_sec 용
             int count = round <= 3 ? 3 : round <= 7 ? 4 : 5;
             bool hasBug = round >= 4;
 
@@ -231,6 +232,7 @@ namespace Shinmyeong.Games.Harvest
                 Result = result,
                 ReactionSec = reaction,
                 HintCount = hintCount,
+                RoundSec = Time.time - roundStartTime,
             });
             _play.HintCount += hintCount;
             if (pulled.Kind == Kind.Target)

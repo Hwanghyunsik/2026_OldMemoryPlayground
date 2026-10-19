@@ -4,87 +4,15 @@ using UnityEngine;
 
 namespace Shinmyeong.Save
 {
-    /// 로컬 저장소 — 엣지 PC 로컬 · 서버 없음 (03 문서 6-1).
-    /// persistentDataPath/SaveData/users.json + records/<사용자Id>.json.
+    /// 로컬 파일 저장 도우미 — 2026-10-19 서버 연동 뒤에는 **캐시 전용**이다.
+    /// 사용자 목록은 서버(A1)가 원본이고 `ParticipantStore` 가 여기에 캐시를 둔다. 참여 기록은 `Net/Outbox` 가 보낼 때까지만 파일로 둔다.
+    /// (이전의 users.json · records/ 로컬 완결 저장은 기획 03 문서 6-1 「서버 없음」 기준이었고, 2026-10-07 외부 서버 결정으로 폐기 — 기획 개정 Q1 대기)
     /// 쓰기는 임시 파일에 쓴 뒤 교체해 중단(전원 차단 등)에도 기존 파일이 살아남게 한다.
     public static class SaveStore
     {
-        static string Root => Path.Combine(Application.persistentDataPath, "SaveData");
-        static string UsersPath => Path.Combine(Root, "users.json");
-        static string RecordsDir => Path.Combine(Root, "records");
-        static string RecordsPath(string userId) => Path.Combine(RecordsDir, userId + ".json");
+        public static string Root => Path.Combine(Application.persistentDataPath, "SaveData");
 
-        // ---- 사용자 ----
-
-        public static UserDatabase LoadUsers() => LoadJson<UserDatabase>(UsersPath) ?? new UserDatabase();
-
-        public static UserProfile AddUser(string name, string gender, int avatarIndex, int cardColorIndex)
-        {
-            var db = LoadUsers();
-            var user = new UserProfile
-            {
-                Id = Guid.NewGuid().ToString("N"),
-                Name = name,
-                Gender = gender,
-                AvatarIndex = avatarIndex,
-                CardColorIndex = cardColorIndex,
-                CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-            };
-            db.Users.Add(user);
-            WriteJson(UsersPath, db);
-            return user;
-        }
-
-        public static void UpdateUser(UserProfile user)
-        {
-            var db = LoadUsers();
-            int idx = db.Users.FindIndex(u => u.Id == user.Id);
-            if (idx < 0)
-            {
-                Debug.LogWarning($"[Save] 수정할 사용자를 찾지 못함: {user.Id}");
-                return;
-            }
-            db.Users[idx] = user;
-            WriteJson(UsersPath, db);
-        }
-
-        /// 사용자 삭제 시 참여 기록도 함께 지운다 (FN-20 확정)
-        public static void DeleteUser(string userId)
-        {
-            var db = LoadUsers();
-            db.Users.RemoveAll(u => u.Id == userId);
-            WriteJson(UsersPath, db);
-            try
-            {
-                if (File.Exists(RecordsPath(userId)))
-                    File.Delete(RecordsPath(userId));
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[Save] 참여 기록 삭제 실패({userId}): {e.Message}");
-            }
-        }
-
-        // ---- 참여 기록 ----
-
-        public static RecordDatabase LoadRecords(string userId)
-        {
-            var db = LoadJson<RecordDatabase>(RecordsPath(userId));
-            return db ?? new RecordDatabase { UserId = userId };
-        }
-
-        public static void AppendRecord(string userId, PlayRecord record)
-        {
-            var db = LoadRecords(userId);
-            db.Records.Add(record);
-            WriteJson(RecordsPath(userId), db);
-            Debug.Log($"[Save] 참여 기록 저장: {record.Activity}/{record.Mode} · {record.DurationSec:F0}s"
-                + $" · 성공 {record.SuccessCount} · 누적 {db.Records.Count}건\n→ {RecordsPath(userId)}");
-        }
-
-        // ---- 파일 IO ----
-
-        static T LoadJson<T>(string path) where T : class
+        public static T LoadJson<T>(string path) where T : class
         {
             try
             {
@@ -104,7 +32,7 @@ namespace Shinmyeong.Save
             }
         }
 
-        static void WriteJson(string path, object data)
+        public static void WriteJson(string path, object data)
         {
             try
             {

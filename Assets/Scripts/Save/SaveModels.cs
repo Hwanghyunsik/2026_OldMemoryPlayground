@@ -3,10 +3,9 @@ using System.Collections.Generic;
 
 namespace Shinmyeong.Save
 {
-    /// 저장 데이터 모델 (03 문서 6-1 · JsonUtility 직렬화).
-    /// 저장 항목 — 사용자: 이름·성별·아바타·배경색 / 참여: 날짜·활동·모드·소요 시간·라운드별 기록.
-    /// 저장하지 않는 것(6-2): 카메라 원본 · 게임 중간 진행 상태 — 중도 종료한 판은 참여 기록을 남기지 않는다.
-    /// 지표(FN-22 정확하게 선택·반응 시간·다른 선택·도움)는 저장하지 않고 이 원시 데이터에서 계산한다.
+    /// 데이터 모델 (JsonUtility 직렬화). 2026-10-19 부터 원본은 서버 — 사용자는 A1 캐시(`ParticipantStore`), 참여 기록은 발신함(`Net/Outbox`)을 거쳐 A2.
+    /// 참여 항목: 날짜·활동·모드·소요 시간·라운드별 기록. 저장하지 않는 것(6-2): 카메라 원본 · 게임 중간 진행 상태 — 중도 종료한 판은 기록을 남기지 않는다.
+    /// 지표(FN-22 정확하게 선택·반응 시간·다른 선택·도움)는 게임이 저장하지 않고 서버가 이 원시 데이터에서 계산한다.
 
     [Serializable]
     public class UserProfile
@@ -16,9 +15,10 @@ namespace Shinmyeong.Save
         public string Gender;      // 통계 전용 · 조회 조건으로 쓰지 않음 (FN-20)
         public int AvatarIndex;    // 그림 8종 (0~7)
         public int CardColorIndex; // 카드 배경색
-        public string CreatedAt;   // yyyy-MM-dd HH:mm:ss
+        public string CreatedAt;   // (서버 목록에는 없음 · 비움)
     }
 
+    /// A1 사용자 목록 캐시 파일 모양 (participants_cache.json)
     [Serializable]
     public class UserDatabase
     {
@@ -30,6 +30,8 @@ namespace Shinmyeong.Save
     [Serializable]
     public class PlayRecord
     {
+        public string SessionId;  // 게임이 만든 UUID — 서버 A2 멱등 키(같은 값으로 재전송) · 2026-10-19 추가
+        public string StoryRunId; // 스토리 3종(수확→장보기→요리)을 묶는 UUID · 개별은 "" · FlowManager.CommitPlay 가 채움
         public string Activity;   // Harvest | Shopping | Cooking
         public string Mode;       // Story | Free — 저장(커밋) 시점에 FlowManager가 채운다
         public string StartedAt;  // yyyy-MM-dd HH:mm:ss
@@ -44,6 +46,7 @@ namespace Shinmyeong.Save
         // 장보기
         public List<ShoppingItemRecord> ShoppingItems = new List<ShoppingItemRecord>(); // 재료별 구매 판정 (~20건)
         public List<float> ShoppingRoundSecs = new List<float>();                       // 라운드 수행 시간
+        public List<int> ShoppingRoundHints = new List<int>();                          // 라운드별 중앙 복귀 유도 힌트 수 — 재료 힌트와 별도 (2026-10-19 추가 · 서버 rounds[].hint_count)
         public int MoveLeftCount;                                                        // 좌우 이동 방향별 횟수
         public int MoveRightCount;
 
@@ -52,6 +55,7 @@ namespace Shinmyeong.Save
 
         public static PlayRecord Start(string activity) => new PlayRecord
         {
+            SessionId = Guid.NewGuid().ToString(),
             Activity = activity,
             StartedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
         };
@@ -66,6 +70,7 @@ namespace Shinmyeong.Save
         public string Result;     // 정답 | 다른 선택 | 벌레
         public float ReactionSec; // 목표 강조 종료(t=0)부터 당김 확정까지
         public int HintCount;
+        public float RoundSec;    // 라운드 시작부터 당김 확정까지 — 서버 round_sec(명세 4-8 요청 2) · 2026-10-19 추가
     }
 
     [Serializable]
@@ -99,13 +104,5 @@ namespace Shinmyeong.Save
         public float ReactionSec; // 최초 팝업 닫힘부터 첫 재료 선택까지 — 반응 시간 끝점(18-4 확정)
         public int ReviewCount;   // 차림표 다시 보기 (내부 데이터로만 기록 · 확정)
         public int HintCount;
-    }
-
-    [Serializable]
-    public class RecordDatabase
-    {
-        public int Version = 1;
-        public string UserId;
-        public List<PlayRecord> Records = new List<PlayRecord>();
     }
 }

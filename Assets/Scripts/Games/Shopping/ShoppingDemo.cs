@@ -338,6 +338,7 @@ namespace Shinmyeong.Games.Shopping
 
             _hud.SetRound(round); // 라운드 표시는 HUD 진행 레일 하나뿐 (중복 배치 금지)
             float roundStart = Time.time;
+            int returnHints = 0; // 중앙 복귀 유도 힌트 — 재료별 힌트와 따로 센다 (기록 ShoppingRoundHints)
             bool roundAllCorrect = true;
 
             // 목표 순서대로 진행: 이동·정지 → 구매 → 중앙 복귀
@@ -423,6 +424,7 @@ namespace Shinmyeong.Games.Shopping
                     {
                         nextHint = Time.time + _hintIntervalSeconds;
                         _play.HintCount++; // 복귀 유도 힌트도 도움 횟수에 포함
+                        returnHints++;
                         yield return FlashGuide("가운데 발판으로 돌아와 주세요");
                     }
                     yield return null;
@@ -435,6 +437,7 @@ namespace Shinmyeong.Games.Shopping
 
             UpdateTargetChips(targets, boughtList, targetCount);
             _play.ShoppingRoundSecs.Add(Time.time - roundStart);
+            _play.ShoppingRoundHints.Add(returnHints);
             if (roundAllCorrect)
                 _play.SuccessCount++; // 모든 목표를 그대로 구매한 라운드 (9-1 확정값으로 재검토)
             _guideText.text = "";

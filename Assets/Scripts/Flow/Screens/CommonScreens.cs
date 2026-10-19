@@ -54,8 +54,8 @@ namespace Shinmyeong.Flow.Screens
 
     // SCR-002 사용자 감지·보정은 CalibrationScreen.cs
 
-    /// SCR-003 사용자 선택 (시안 SCR-003) — 저장소의 등록 사용자 카드 + 비회원.
-    /// 사용자 등록·수정은 관리자 화면(FN-20 · 타 팀 웹) 몫 — 여기서는 선택만.
+    /// SCR-003 사용자 선택 (시안 SCR-003) — 서버 A1 사용자 카드(캐시로 먼저 그리고 응답 오면 다시) + 비회원.
+    /// 사용자 등록·수정은 관리자 웹(FN-20) 몫 — 여기서는 선택만.
     /// 페이징(2-5 확정): 쪽당 8명(4×2) · 그리드 바깥 좌우 세로 버튼 + 현재 쪽 표시 · 그리드 안에 이동 카드 금지 ·
     /// 첫/마지막 쪽에서는 해당 방향 버튼 자체를 표시하지 않는다(8-5 원칙).
     public class UserSelectScreen : ScreenBase
@@ -71,9 +71,11 @@ namespace Shinmyeong.Flow.Screens
             (Skin.Hex("e1f9f3"), Skin.Hex("a1d9cd")), (Skin.Hex("ffe3d4"), Skin.Hex("ffb48a")),
         };
 
+        const string EmptyMessage = "등록된 분이 아직 없어요\n(등록은 관리자 화면에서 합니다)";
         GameObject _cardsRoot;
         Text _emptyText;
         int _page;
+        int _loadSeq;
 
         protected override void BuildUi()
         {
@@ -106,23 +108,32 @@ namespace Shinmyeong.Flow.Screens
 
             UiKit.NavButton(transform, "HomeButton", 84, 477, "처음으로", "Icon-Home", () => Flow.Go(ScreenId.SCR_001))
                 .gameObject.AddComponent<SafeAreaExempt>().Reason = "디자인 시안 배치(좌측 끝) — 2-4 안전 영역 밖 · 기획 확인 대기(Q5)";
-
-#if UNITY_EDITOR
-            // 에디터 전용: 관리자 웹(타 팀) 연동 전 저장 검증용 사용자 등록
-            var devAdd = UiKit.NavButton(transform, "DevAddUser", 1700, 900, "+ 테스트 사용자", null, () =>
-            {
-                int n = Save.SaveStore.LoadUsers().Users.Count + 1;
-                Save.SaveStore.AddUser($"테스트{n}", n % 2 == 0 ? "남" : "여", (n - 1) % 8, (n - 1) % 8);
-                RebuildCards();
-            }, w: 180, h: 70, dwellSeconds: 1f, labelSize: 20);
-            devAdd.gameObject.AddComponent<SafeAreaExempt>().Reason = "에디터 전용 개발 버튼 — 빌드 미포함";
-#endif
         }
 
         protected override void OnEnter()
         {
             _page = 0;
             RebuildCards();
+            RefreshFromServer(++_loadSeq);
+        }
+
+        protected override void OnExit() => _loadSeq++;
+
+        /// 서버 A1 로 목록을 새로 받아 다시 그린다. 실패하면 마지막 캐시 그대로 · 캐시도 없으면 중립 안내
+        async void RefreshFromServer(int seq)
+        {
+            var res = await Save.ParticipantStore.Refresh();
+            if (seq != _loadSeq || Flow.CurrentId != Id)
+                return;
+            if (res.Ok)
+            {
+                RebuildCards();
+                return;
+            }
+            if (Save.ParticipantStore.HasCache)
+                return;
+            _emptyText.text = "지금은 명단을 불러올 수 없어요\n잠시 후 다시 봐 주세요";
+            _emptyText.gameObject.SetActive(true);
         }
 
         void RebuildCards()
@@ -131,7 +142,8 @@ namespace Shinmyeong.Flow.Screens
                 Destroy(_cardsRoot);
             _cardsRoot = UiKit.Group(transform, "Cards").gameObject;
 
-            var users = Save.SaveStore.LoadUsers().Users;
+            var users = Save.ParticipantStore.Cached;
+            _emptyText.text = EmptyMessage;
             _emptyText.gameObject.SetActive(users.Count == 0);
 
             int pages = Mathf.Max(1, Mathf.CeilToInt(users.Count / (float)UsersPerPage));
@@ -169,6 +181,7 @@ namespace Shinmyeong.Flow.Screens
                     Flow.IsGuest = false;
                     Flow.UserId = user.Id;
                     Flow.UserName = user.Name;
+                    Flow.UserAvatarIndex = user.AvatarIndex;
                     Flow.Go(ScreenId.SCR_004);
                 });
             }
@@ -228,6 +241,7 @@ namespace Shinmyeong.Flow.Screens
             UiKit.Dwell(story, 652, 607, 3f, () =>
             {
                 Flow.Mode = GameMode.Story;
+                Flow.StoryRunId = System.Guid.NewGuid().ToString(); // 이 스토리 한 판의 묶음 ID
                 Flow.Go(ScreenId.SCR_006);
             });
 
@@ -270,8 +284,7 @@ namespace Shinmyeong.Flow.Screens
         /// 헤더 아바타 — 비회원이면 숨긴다
         internal static void ApplyAvatar(Image avatar, FlowManager flow)
         {
-            var profile = flow.IsGuest ? null : Save.SaveStore.LoadUsers().Users.Find(u => u.Id == flow.UserId);
-            var sprite = profile != null ? ArtCatalog.Get(ArtCatalog.Avatar, $"아바타{profile.AvatarIndex + 1}") : null;
+            var sprite = flow.IsGuest || flow.UserAvatarIndex < 0 ? null : ArtCatalog.Get(ArtCatalog.Avatar, $"아바타{flow.UserAvatarIndex + 1}");
             avatar.gameObject.SetActive(sprite != null);
             if (sprite != null)
                 avatar.sprite = sprite;
@@ -286,6 +299,7 @@ namespace Shinmyeong.Flow.Screens
         GameObject _userBadge;
         Text _userName;
         readonly Text[] _recent = new Text[3];
+        int _recentSeq;
 
         protected override void BuildUi()
         {
@@ -329,17 +343,25 @@ namespace Shinmyeong.Flow.Screens
             _userName.text = $"{Flow.UserName} 님";
             ModeSelectScreen.ApplyAvatar(_avatar, Flow);
 
-            // 활동별 최근 참여일 — 기록이 있을 때만
+            // 활동별 최근 참여일 — 서버 A3 활동별 최근 1건 (응답이 오면 채움 · 없거나 실패면 빈칸)
+            for (int i = 0; i < 3; i++)
+                _recent[i].text = "";
+            if (!Flow.IsGuest && !string.IsNullOrEmpty(Flow.UserId))
+                LoadRecent(++_recentSeq);
+        }
+
+        protected override void OnExit() => _recentSeq++;
+
+        async void LoadRecent(int seq)
+        {
             string[] keys = { "Harvest", "Shopping", "Cooking" };
-            var records = Flow.IsGuest || string.IsNullOrEmpty(Flow.UserId)
-                ? null : Save.SaveStore.LoadRecords(Flow.UserId).Records;
             for (int i = 0; i < 3; i++)
             {
-                string last = null;
-                if (records != null)
-                    for (int r = records.Count - 1; r >= 0; r--)
-                        if (records[r].Activity == keys[i]) { last = records[r].StartedAt; break; }
-                _recent[i].text = last != null ? $"최근 참여 {RecordsScreen.FormatDate(last)}" : "";
+                var res = await Net.MyRecords.FetchByActivity(Flow.UserId, keys[i], 1);
+                if (seq != _recentSeq || Flow.CurrentId != Id)
+                    return;
+                if (res.Ok && res.Data.sessions.Count > 0)
+                    _recent[i].text = $"최근 참여 {RecordsScreen.FormatDate(Net.MyRecords.ToLocal(res.Data.sessions[0].started_at))}";
             }
         }
     }

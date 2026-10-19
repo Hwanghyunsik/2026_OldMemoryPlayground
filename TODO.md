@@ -82,8 +82,20 @@
 
 > **결정: 관리자 화면 전체(ADM 9 + POP-A 4)를 별도 웹서버로 다른 팀이 구현하고, 사용자·참여 기록 데이터도 웹서버가 소유.** Unity는 API로 조회·저장. 화면 구현 항목은 담당 팀 이관으로 이 목록에서 제외. Unity 내장판(2026-08-31 하루 구현분: 인증·사용자 관리·점검·설정)은 `Archive/2026-08-31_관리자_Unity내장판/` 보관 — 담당 팀 참고 자료로 전달 가능
 - [ ] **연동 규격 협의** — `Docs/91_관리자웹_연동규격_초안.md` 작성(2026-08-31) → 담당 팀·기획과 확정. 특히 P1(서버 위치 — 외부면 18-1·6-1 확정과 충돌) · P2(서버 장애 시 게임 단독 동작) 필수 · **2026-10-07: 외부 서버·기관/운영자 로그인 결정 → ERD 초안 `Docs/93_서버_ERD_초안.md` 작성(서버 팀 전달 대기 · 기획 개정 Q1 등 5장)** · 2026-10-08: DB = MongoDB → 93·93-1 컬렉션 설계로 변경
-- [ ] Unity 데이터 계층 전환 — SaveStore(로컬 JSON) 내부를 서버 API 클라이언트로 교체 (호출 지점 4곳: CommitPlay·SCR-003·SCR-023) · 규격 확정 후 · 로컬 폴백 여부는 P2 결정 따름 → 93 문서 제안: 목록 캐시 + 기록 로컬 보관 후 재전송 · PlayRecord에 SessionId(UUID) 추가 · 2026-10-08: 설치 흐름 더미(운영자 로그인 `LoginScreen` → 기기 선택 `DeviceSelectScreen` · `DeviceAuth`) 완료 — 실제 D1~D3 호출로 교체 필요
-- [ ] Unity 상태 제공 구현 — 카메라 연결·사람 인식 상태 · 카메라 미리보기 스냅샷(조건부 C7) · 프로그램 종료 수신 · 소리 설정 반영(음성 도입 시) — 제공 방식은 규격 협의 후
+- [x] **Unity 데이터 계층 전환** (2026-10-19 1~5단계 완료 · 6단계 문서 정리 남음) — 호출 지점 4곳(CommitPlay·SCR-003·SCR-005·SCR-023) 전부 서버로 · 로컬 폴백 = A1 캐시(`ParticipantStore`) + 기록 발신함(`Outbox`) · 2026-10-08: 설치 흐름 더미(운영자 로그인 `LoginScreen` → 기기 선택 `DeviceSelectScreen` · `DeviceAuth`) 완료
+  - [x] **API 명세 수령·적용 준비** (2026-10-19) — `Docs/신명놀이터_API.md`(관리자 웹 팀 · 10/16) → 대조·작업 순서 `Docs/94_API_적용_준비.md` · `Assets/Scripts/Net/`(ApiConfig·ApiClient·ApiModels·PlaySessionMapper) · PlayRecord SessionId/StoryRunId · 수확 RoundSec · 에디터 메뉴(A2 미리보기 · 서버 연결 확인) · 개발 서버 405 응답 확인
+  - [x] **명세 ↔ 기획 확정 대조 · 회신 문서** (2026-10-19) — `Docs/95_API_회신_관리자웹팀.md`: 서버 수정 요청 6건(장보기 1번 지표 재료 단위 · 요리 3번 지표 라운드 단위 · 장보기 라운드 힌트 합산 · A3 활동별 · 카드색 시안 통일 · started_at 미래 400) + 4-8 답변 7건. 게임 반영: `ShoppingRoundHints` + `rounds[].hint_count`
+  - [x] 관리자 웹 팀 회신 전달 · 반영 확인 (R1~R6) (2026-10-19) — 요청서 `Docs/96` → 회신 `Docs/97`(14시 6건 전부 반영) → 15:11 시뮬레이션 재전송으로 장보기 hint_count 14건 일치 · `?activity=` · `accuracy_count`·`clock_suspect` 확인 · 94 문서 7장 ✅ 갱신 · 응답 모델 보강
+  - [ ] **98 확인 회신 전달** `Docs/98_API_확인회신_관리자웹팀.md` → 관리자 웹 팀이 옛 14건(10/19 12시 수신분) 삭제했는지 확인 · 장보기 통계 분모(실제 재료 수) 회신 · Unity 연동가이드 v2.2 파일 수령
+  - [ ] 장보기 재료 총량 **21(게임 · 07 5-6 표) vs 20(07 본문)** — 기획 Q2 회신 받으면 `ShoppingDemo.TargetCount`·`ApiSimulation` 조정 여부 결정 후 관리자 웹 팀 통보
+  - [x] **게임 시뮬레이션 A2 전송·A3 되읽기** (2026-10-19) — `Net/PlaySessionUploader`(결과 분류) · 에디터 `게임 시뮬레이션`·`A3 되읽기` 메뉴 · 개발 서버에 사용자 2명 × 7건 저장 · 멱등 200 확인 · 관리자 화면 대조는 사용자 확인 대기
+  - [x] 1단계 설치 D1~D3 (2026-10-19) — `DeviceAuth` 실호출(Awaitable) · `LoginScreen`(서버 message 안내 · 401 비밀번호 지움 · 429/403 그대로 표시) · `DeviceSelectScreen`(목록 비동기 · 409 in_use → 옮기기 확인 · 401 → 로그인) · 개발 서버에서 `shin1234` 로그인 → 기기 「1층」 토큰 발급 → A1(2명)·B2·명령·B1 200 확인 · 에디터 「기초 테스트」 메뉴
+  - [x] 2단계 기기 상주 `DeviceLink` (2026-10-19) — `Net/DeviceLink.cs` 자동 생성 · B1 5초 · 명령 5초(ack → 종료) · B2 60초(AudioListener.volume) · 발신함 30초 · 401 → SCR-001 복귀 때 로그인 화면(`FlowManager.Go`) · 플레이 모드에서 서버 연결·설정 수신 확인
+  - [x] 3단계 사용자 목록 A1 (2026-10-19) — `Save/ParticipantStore.cs`(서버 → 캐시 participants_cache.json) · SCR-003 캐시 먼저 → 응답 오면 다시 · 에디터 테스트 사용자 버튼 제거 · `FlowManager.UserAvatarIndex` · 플레이 모드에서 서버 2명 카드 확인
+  - [x] 4단계 참여 기록 A2 + 발신함 (2026-10-19) — `Net/Outbox.cs`(파일 큐 · 30초 재전송 · 400/404/409 는 rejected/ 보관 · 400+server_time 시계 보정 1회) · `CommitPlay → Outbox → DeviceLink.FlushSoon` · 플레이 모드 커밋 → 즉시 201 확인
+  - [x] 5단계 내 기록 A3 (2026-10-19) — `Net/MyRecords.cs` · `RecordsScreen` 서버 응답(전체 limit 20 + 활동별 `?activity=&limit=5`) · 로비 최근 참여(활동별 limit 1) · story_run_id 묶음 · 플레이 모드에서 요약 5일/36분51초 · 활동별 평균·막대 · 최근 5줄 확인
+  - [ ] 6단계 정리 — ✅ SaveStore 캐시 도우미로 축소 · `RecordDatabase` 제거 / 남은 것: 93/93-1/91 문서에 적용 결과 반영 · 실기기(카메라 PC) 1차 확인(camera_connected · 종료 명령 · 서버 불통 시 캐시/발신함 동작) · 미확인 Q1(Unity 연동가이드 파일)·Q5(app_version)
+- [x] Unity 상태 제공 구현 (2026-10-19 `DeviceLink`) — 카메라 연결·사람 인식 상태(B1) · 프로그램 종료 수신(명령 → ack → 종료) · 소리 설정 반영(B2 → AudioListener · 음성 여부는 TTS 도입 시) · 카메라 미리보기 스냅샷은 명세에서 제외 결정
 
 ## 8. 자산 · 마무리
 

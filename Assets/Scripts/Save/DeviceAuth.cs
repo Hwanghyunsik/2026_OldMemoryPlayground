@@ -1,93 +1,141 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Shinmyeong.Net;
 
 namespace Shinmyeong.Save
 {
-    /// 관리자 웹에 등록된 기기 1대
+    /// 관리자 웹에 등록된 기기 1대 (D2 `devices[]`)
     public struct DeviceInfo
     {
         public string Id;
         public string Name;
-        public bool InUse; // 다른 PC에 이미 연결됨 (D2 `in_use`)
+        public bool InUse;          // 다른 PC에 이미 연결됨 (D2 `in_use`)
+        public string LastSeenAt;   // 마지막 상태 보고 시각 (없으면 null)
+        public string AppVersion;
 
-        public DeviceInfo(string id, string name, bool inUse = false)
+        public DeviceInfo(string id, string name, bool inUse = false, string lastSeenAt = null, string appVersion = null)
         {
             Id = id;
             Name = name;
             InUse = inUse;
+            LastSeenAt = lastSeenAt;
+            AppVersion = appVersion;
         }
     }
 
-    /// 기기 연결(93 문서 D1~D3) — **더미**.
-    /// 설치 때 운영자가 username·password로 로그인 → 기관에 등록된 기기 목록에서 이 PC가 맡을 기기를 고름 →
-    /// 서버가 그 기기의 토큰을 발급한다는 흐름만 흉내 낸다. 기기 생성(이름 등록)은 관리자 웹 몫이다.
-    /// 서버 연동 전까지는 고정 더미 계정만 통과시키고 고정 목록·가짜 토큰을 쓴다.
+    /// 기기 연결 — 명세 1장 설치 흐름 D1~D3 (Docs/신명놀이터_API.md · 93-1 §5).
+    /// 설치 때 운영자가 username·password로 로그인(D1 · 운영자 토큰 30분 · 메모리에만) → 기관의 기기 목록(D2)에서
+    /// 이 PC가 맡을 기기를 고름 → 서버가 그 기기의 토큰을 발급(D3) → PlayerPrefs 에 보관. 이후 모든 기기 호출은 이 토큰만 쓴다.
+    /// 기기 생성(이름 등록)은 관리자 웹 몫이다.
     public static class DeviceAuth
     {
-        public const string DummyUsername = "admin";
-        public const string DummyPassword = "1234";
-
-        static readonly DeviceInfo[] DummyDevices =
-        {
-            new DeviceInfo("6702f1a9c3b4d5e6f7a8b901", "1층 프로그램실"),
-            new DeviceInfo("6702f1a9c3b4d5e6f7a8b902", "2층 강당"),
-            new DeviceInfo("6702f1a9c3b4d5e6f7a8b903", "경로당 거실", inUse: true),
-        };
-
         const string TokenKey = "Device.Token";
         const string IdKey = "Device.Id";
         const string NameKey = "Device.Name";
         const string OperatorKey = "Device.ActivatedBy";
 
-        /// 로그인한 운영자 (기기 선택이 끝나면 버린다 — 게임은 기기 토큰만 쓴다)
-        static string _operator;
+        // 운영자 토큰 — 기기 선택이 끝나면 버린다 (게임은 기기 토큰만 쓴다 · 서버에도 저장되지 않는다)
+        static string _operatorToken;
+        static DateTime _operatorExpiresUtc;
+        static string _operatorName;
 
         public static bool IsRegistered => !string.IsNullOrEmpty(PlayerPrefs.GetString(TokenKey, ""));
-        public static bool IsLoggedIn => !string.IsNullOrEmpty(_operator);
+        /// 저장된 기기 토큰(`dev_…`) — 설치 뒤 모든 기기 호출의 Bearer
+        public static string Token => PlayerPrefs.GetString(TokenKey, "");
         public static string DeviceId => PlayerPrefs.GetString(IdKey, "");
         public static string DeviceName => PlayerPrefs.GetString(NameKey, "");
 
-        /// D1 운영자 로그인. 서버 연동 시 이 함수 내부만 API 호출로 바꾼다
-        public static bool Login(string username, string password)
+        public static bool IsLoggedIn => !string.IsNullOrEmpty(_operatorToken) && DateTime.UtcNow < _operatorExpiresUtc;
+        public static string OperatorName => _operatorName;
+        public static string OrganizationName { get; private set; }
+
+        /// D2 로 마지막에 받은 목록 (화면 표시용)
+        public static IReadOnlyList<DeviceInfo> LastDevices { get; private set; } = Array.Empty<DeviceInfo>();
+
+        /// D1 운영자 로그인. 실패 사유는 `result.Message`(서버가 준 한국어) — 401 틀림 · 403 막힌 계정/정지된 기관/전체관리자 · 429 잠시 잠김
+        public static async Awaitable<ApiResult<LoginResponse>> Login(string username, string password)
         {
-            if (username != DummyUsername || password != DummyPassword)
-                return false;
-            _operator = username;
-            return true;
+            Logout();
+            var res = await ApiClient.Post<LoginResponse>("auth/login", new LoginRequest { username = username, password = password });
+            if (res.Ok && !string.IsNullOrEmpty(res.Data.token))
+            {
+                _operatorToken = res.Data.token;
+                _operatorExpiresUtc = ParseUtc(res.Data.expires_at, DateTime.UtcNow.AddMinutes(30));
+                _operatorName = res.Data.@operator != null ? res.Data.@operator.name : username;
+                OrganizationName = res.Data.organization != null ? res.Data.organization.name : "";
+                Debug.Log($"[DeviceAuth] 운영자 로그인 — {_operatorName} / {OrganizationName} (만료 {_operatorExpiresUtc:HH:mm} UTC)");
+            }
+            else if (res.Ok)
+            {
+                res.Ok = false;
+                res.Message = "로그인 응답에 토큰이 없습니다";
+            }
+            return res;
         }
 
-        /// D2 로그인한 운영자 기관의 기기 목록
-        public static IReadOnlyList<DeviceInfo> LoadDevices() => IsLoggedIn ? DummyDevices : Array.Empty<DeviceInfo>();
-
-        /// D3 고른 기기의 토큰 발급 · 저장. 다른 PC가 쓰는 기기는 replace일 때만 옮긴다(그 PC의 토큰은 서버에서 무효) —
-        /// replace 없이 사용 중인 기기를 고르면 서버가 409로 거절하는 것을 흉내 내 false
-        public static bool SelectDevice(DeviceInfo device, bool replace = false)
+        /// D2 로그인한 운영자 기관의 기기 목록 → `LastDevices`
+        public static async Awaitable<ApiResult<DevicesResponse>> LoadDevices()
         {
-            if (device.InUse && !replace)
-                return false;
-            PlayerPrefs.SetString(TokenKey, "dummy-" + Guid.NewGuid().ToString("N"));
-            PlayerPrefs.SetString(IdKey, device.Id);
-            PlayerPrefs.SetString(NameKey, device.Name);
-            PlayerPrefs.SetString(OperatorKey, _operator ?? "");
-            PlayerPrefs.Save();
-            Debug.Log($"[DeviceAuth] 더미 기기 연결 — {device.Name} (운영자 {_operator})");
-            _operator = null;
-            return true;
+            var res = await ApiClient.Get<DevicesResponse>("devices", _operatorToken);
+            if (res.Ok)
+            {
+                var list = new List<DeviceInfo>();
+                foreach (var d in res.Data.devices)
+                    list.Add(new DeviceInfo(d.id, d.name, d.in_use, d.last_seen_at, d.app_version));
+                LastDevices = list;
+            }
+            return res;
         }
 
-        public static void Logout() => _operator = null;
+        /// D3 고른 기기의 토큰 발급 · 저장. 다른 PC가 쓰는 기기는 replace일 때만 옮긴다(그 PC의 토큰은 서버에서 무효).
+        /// replace 없이 사용 중인 기기를 고르면 409 (`result.InUse`)
+        public static async Awaitable<ApiResult<DeviceTokenResponse>> SelectDevice(DeviceInfo device, bool replace = false)
+        {
+            var res = await ApiClient.Post<DeviceTokenResponse>($"devices/{device.Id}/token", new DeviceTokenRequest { replace = replace }, _operatorToken);
+            if (res.Ok && !string.IsNullOrEmpty(res.Data.token))
+            {
+                PlayerPrefs.SetString(TokenKey, res.Data.token);
+                PlayerPrefs.SetString(IdKey, res.Data.device != null ? res.Data.device.id : device.Id);
+                PlayerPrefs.SetString(NameKey, res.Data.device != null ? res.Data.device.name : device.Name);
+                PlayerPrefs.SetString(OperatorKey, _operatorName ?? "");
+                PlayerPrefs.Save();
+                Debug.Log($"[DeviceAuth] 기기 연결 — {device.Name} (운영자 {_operatorName} · 교체 {res.Data.replaced})");
+                Logout();
+                DeviceLink.OnDeviceLinked();
+            }
+            else if (res.Ok)
+            {
+                res.Ok = false;
+                res.Message = "기기 토큰 응답이 비어 있습니다";
+            }
+            return res;
+        }
 
-        /// 기기 연결 해제 — 다음 실행 때 로그인 화면부터 시작 (실행 인자 `-relogin` · 에디터 메뉴)
+        public static void Logout()
+        {
+            _operatorToken = null;
+            _operatorName = null;
+            _operatorExpiresUtc = DateTime.MinValue;
+        }
+
+        /// 기기 연결 해제 — 다음 실행 때 로그인 화면부터 시작 (실행 인자 `-relogin` · 에디터 메뉴 · 서버 401)
         public static void Clear()
         {
-            _operator = null;
+            Logout();
             PlayerPrefs.DeleteKey(TokenKey);
             PlayerPrefs.DeleteKey(IdKey);
             PlayerPrefs.DeleteKey(NameKey);
             PlayerPrefs.DeleteKey(OperatorKey);
             PlayerPrefs.Save();
             Debug.Log("[DeviceAuth] 기기 연결 해제");
+        }
+
+        static DateTime ParseUtc(string iso, DateTime fallback)
+        {
+            if (DateTimeOffset.TryParse(iso, null, System.Globalization.DateTimeStyles.AssumeUniversal, out var t))
+                return t.UtcDateTime;
+            return fallback;
         }
 
 #if UNITY_EDITOR
