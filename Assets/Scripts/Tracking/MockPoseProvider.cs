@@ -3,8 +3,8 @@ using UnityEngine.InputSystem;
 
 namespace Shinmyeong.Tracking
 {
-    /// 웹캠 없이 개발할 때 쓰는 마우스 시뮬레이션.
-    /// 마우스 = 오른손 손목, 마우스 x = 몸 중심. P 키로 사람 존재 여부 토글.
+    /// 웹캠 없이 개발할 때 쓰는 마우스 시뮬레이션 (디버그 마우스 모드 · BodyTrackingService F2).
+    /// 마우스 = 오른손 손목만, 마우스 x = 몸 중심. 왼손은 추적하지 않는다(커서 1개 · 엉뚱한 dwell 방지). P 키로 사람 존재 여부 토글.
     public class MockPoseProvider : MonoBehaviour, IPoseProvider
     {
         [SerializeField] bool _personPresent = true;
@@ -38,7 +38,7 @@ namespace Shinmyeong.Tracking
             Set(PoseJoint.LeftHip, mx + 0.06f, 0.6f, score);
             Set(PoseJoint.RightHip, mx - 0.06f, 0.6f, score);
             Set(PoseJoint.RightWrist, mx, my, score);
-            Set(PoseJoint.LeftWrist, mx + 0.2f, 0.55f, score * 0.5f);
+            // 왼손은 미추적(score 0) — 마우스 하나로 오른손만 조작한다
 
             _latest.Timestamp = Time.realtimeSinceStartupAsDouble;
             _latest.Valid = true;

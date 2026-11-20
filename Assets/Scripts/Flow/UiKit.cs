@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using Shinmyeong.Interaction;
+using Shinmyeong.Sound;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Flow
@@ -260,11 +261,14 @@ namespace Shinmyeong.Flow
             return Dwell(root, w, h, dwellSeconds, onSelected);
         }
 
-        /// 임의 노드를 dwell 선택 대상으로 만들고 선택 진행 표시를 얹는다
-        public static DwellTarget Dwell(RectTransform node, float w, float h, float dwellSeconds, Action onSelected, bool withText = true)
+        /// 임의 노드를 dwell 선택 대상으로 만들고 선택 진행 표시를 얹는다.
+        /// 머무르기가 끝나면 선택 완료음(01_SE)을 낸다 — 자기 소리가 따로 있는 대상(요리 재료 15_SE · 차림표 다시 보기 14_SE)은 sound: false
+        public static DwellTarget Dwell(RectTransform node, float w, float h, float dwellSeconds, Action onSelected, bool withText = true, bool sound = true)
         {
             var target = node.gameObject.AddComponent<DwellTarget>();
             target.SetDwellSeconds(dwellSeconds);
+            if (sound)
+                target.Selected += _ => SoundPlayer.Select(); // 동작보다 먼저 — 같은 순간 화면 소리가 나면 그 소리가 이긴다 (08 공통규칙)
             if (onSelected != null)
                 target.Selected += _ => onSelected();
             DwellSelectOverlay.Attach(target, w, h, withText);

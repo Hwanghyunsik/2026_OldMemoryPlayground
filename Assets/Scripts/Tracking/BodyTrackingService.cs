@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Shinmyeong.Tracking
 {
@@ -11,9 +12,13 @@ namespace Shinmyeong.Tracking
     {
         public static BodyTrackingService Instance { get; private set; }
 
-        [Header("제공자 (둘 다 있으면 MoveNet 우선)")]
+        [Header("제공자 (둘 다 있으면 MoveNet 우선 · 디버그 마우스 모드면 Mock 우선)")]
         [SerializeField] MoveNetPoseProvider _moveNet;
         [SerializeField] MockPoseProvider _mock;
+
+        [Header("디버그 — 마우스 입력 (에디터·개발 빌드에서만)")]
+        [Tooltip("켜면 에디터·개발 빌드는 시작부터 마우스를 오른손으로 쓴다 — 카메라가 연결돼 있어도 무시(좁은 장소에서 매번 카메라 인식을 안 해도 되게 · 2026-10-20).\nF2 로 마우스 ↔ 카메라 전환. 릴리스 빌드에는 영향 없음(카메라 없을 때만 Mock 대체)")]
+        [SerializeField] bool _mouseInDebug = true;
 
         [Header("판정 기준값 (시작값 · 밸런스 문서에서 확정)")]
         [Tooltip("키포인트를 신뢰하는 최소 score (추적 획득 문턱)")]
@@ -33,9 +38,17 @@ namespace Shinmyeong.Tracking
         [Tooltip("화면 하단 버튼에 닿으려고 몸을 숙이면 손목 추적을 잃는 문제 대응(2026-08-31 실사용 발견).\n서서 허리~머리 높이 손 움직임만으로 화면 전체에 닿게 한다. 끄면 기존 1:1 매핑")]
         [SerializeField] bool _handZoneEnabled = true;
         [Tooltip("리치 존 좌하단 (뷰포트 좌표 · y 위로) — 이 지점이 화면 (0,0)이 된다")]
-        [SerializeField] Vector2 _handZoneMin = new Vector2(0.10f, 0.40f);
+        [SerializeField] Vector2 _handZoneMin = new Vector2(0.20f, 0.40f);
         [Tooltip("리치 존 우상단 — 이 지점이 화면 (1,1)이 된다")]
-        [SerializeField] Vector2 _handZoneMax = new Vector2(0.90f, 0.85f);
+        [SerializeField] Vector2 _handZoneMax = new Vector2(0.80f, 0.85f);
+
+        [Header("몸 중심 리치 존 — 몸 중심 카메라 가로 영역 일부를 화면 전체로 매핑 (장보기 · 실환경 튜닝)")]
+        [Tooltip("어르신이 좌우로 많이 걷지 않아도 바깥 발판까지 닿게 한다(2026-11-19). 끄면 기존 1:1 매핑")]
+        [SerializeField] bool _bodyZoneEnabled = true;
+        [Tooltip("이 카메라 x(뷰포트)가 화면 왼쪽 끝(0)이 된다")]
+        [SerializeField] float _bodyZoneMinX = 0.20f;
+        [Tooltip("이 카메라 x(뷰포트)가 화면 오른쪽 끝(1)이 된다")]
+        [SerializeField] float _bodyZoneMaxX = 0.80f;
 
         [Header("스무딩 (One Euro) — 낮은 minCutoff = 강한 스무딩, 높은 beta = 빠른 움직임 반응")]
         [SerializeField] float _handMinCutoff = 0.5f;
@@ -194,14 +207,46 @@ namespace Shinmyeong.Tracking
         public bool GetHandCoasting(HandSide side) => Pipeline(side).Coasting;
         public bool BodyCoasting { get; private set; }
 
-        /// 몸 중심(골반) 가로 위치 0~1 · 장보기 발판 판정용
-        public float BodyCenterX01 { get; private set; } = 0.5f;
+        /// 몸 중심(골반) 가로 위치 0~1 · 장보기 발판 판정용 — 몸 중심 리치 존 매핑 적용 후 값(화면 공간)
+        public float BodyCenterX01 => BodyZoneActive
+            ? Mathf.Clamp01(Mathf.InverseLerp(_bodyZoneMinX, _bodyZoneMaxX, BodyCenterRawX01))
+            : BodyCenterRawX01;
+
+        /// 매핑 전 카메라 공간 몸 중심 x (0~1) — 캘리브레이션 중앙 정렬처럼 실제 선 위치를 볼 때 쓴다
+        public float BodyCenterRawX01 { get; private set; } = 0.5f;
+
+        /// 몸 가로 매핑 배율 — 리치 존이 켜지면 카메라 공간의 가로 거리가 화면 공간에서 1/(존 폭)배로 늘어난다.
+        /// 몸 흔들림 물리 거리로 정의된 임계값(장보기 정지 변위 등)을 화면 공간으로 환산할 때 곱한다
+        public float BodyMapScaleX => BodyZoneActive ? 1f / Mathf.Max(0.05f, _bodyZoneMaxX - _bodyZoneMinX) : 1f;
+
+        // Mock(마우스)은 화면 좌표 그대로 — 실카메라일 때만 적용 (손 리치 존과 같은 규칙)
+        bool BodyZoneActive => _bodyZoneEnabled && !(ActiveProvider is MockPoseProvider);
         public bool BodyValid { get; private set; }
 
         /// 원본 포즈 (디버그·확장용)
         public PoseFrame LatestFrame => _frame;
         public IPoseProvider ActiveProvider { get; private set; }
         public bool Mirror => _mirror;
+
+        /// 디버그 모드 = 에디터 또는 개발 빌드. 릴리스 빌드에서는 마우스 모드를 켤 수 없다
+        public static bool DebugMode => Application.isEditor || Debug.isDebugBuild;
+
+        /// 마우스 모드: 카메라와 무관하게 마우스를 오른손으로 쓴다 (디버그 모드 전용 · F2 토글)
+        public bool MouseMode { get; private set; }
+
+        /// 카메라(MoveNet)가 실제로 돌고 있는가 — 활성 제공자와 무관 (기기 상태 보고 camera_connected 용)
+        public bool CameraRunning => _moveNet != null && _moveNet.IsRunning;
+
+        /// 마우스 모드 켜기/끄기 — 디버그 모드가 아니거나 Mock 제공자가 없으면 무시
+        public void SetMouseMode(bool on)
+        {
+            if (on && (!DebugMode || _mock == null))
+                return;
+            if (MouseMode == on)
+                return;
+            MouseMode = on;
+            Debug.Log(MouseMode ? "[Tracking] 마우스 모드 — 마우스 = 오른손 (F2 로 카메라 전환)" : "[Tracking] 카메라 모드 (F2 로 마우스 전환)");
+        }
 
         public event System.Action OnPersonAppeared;
         public event System.Action OnPersonLost;
@@ -223,6 +268,7 @@ namespace Shinmyeong.Tracking
                 _mock = GetComponent<MockPoseProvider>();
 
             RebuildFilters();
+            SetMouseMode(_mouseInDebug);
         }
 
         void OnValidate()
@@ -250,7 +296,17 @@ namespace Shinmyeong.Tracking
 
         void Update()
         {
-            ActiveProvider = SelectProvider();
+            if (DebugMode && Keyboard.current != null && Keyboard.current.f2Key.wasPressedThisFrame)
+                SetMouseMode(!MouseMode);
+
+            var provider = SelectProvider();
+            if (provider != ActiveProvider)
+            {
+                // 제공자가 바뀌면(마우스 ↔ 카메라) 이전 제공자의 필터 상태·타임스탬프를 버린다 — 다른 좌표계로 글라이드하지 않게
+                ActiveProvider = provider;
+                RebuildFilters();
+                _lastFrameTimestamp = 0;
+            }
             if (ActiveProvider == null || !ActiveProvider.TryGetLatest(_frame))
             {
                 UpdatePersonPresence(false, Time.unscaledDeltaTime);
@@ -285,11 +341,14 @@ namespace Shinmyeong.Tracking
             _leftHand.Interpolate(k);
             _rightHand.Interpolate(k);
             if (BodyValid)
-                BodyCenterX01 = Mathf.Lerp(BodyCenterX01, _bodyTarget, k);
+                BodyCenterRawX01 = Mathf.Lerp(BodyCenterRawX01, _bodyTarget, k);
         }
 
         IPoseProvider SelectProvider()
         {
+            // 디버그 마우스 모드: 카메라가 돌고 있어도 마우스(Mock)를 쓴다
+            if (MouseMode && _mock != null && _mock.IsRunning)
+                return _mock;
             if (_moveNet != null && _moveNet.IsRunning)
                 return _moveNet;
             if (_mock != null && _mock.IsRunning)
@@ -380,7 +439,7 @@ namespace Shinmyeong.Tracking
             if (!_bodyTracking)
             {
                 _bodyTracking = true;
-                BodyCenterX01 = _bodyTarget;
+                BodyCenterRawX01 = _bodyTarget;
             }
             BodyValid = true;
         }

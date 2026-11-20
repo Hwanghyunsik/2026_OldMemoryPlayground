@@ -34,6 +34,9 @@ namespace Shinmyeong.Interaction
         public int CurrentZoneId { get; private set; } = -1;
         public bool Locked { get; private set; }
 
+        /// 정지 변위 임계 배율 — 입력 x가 확대 매핑된 좌표일 때(몸 중심 리치 존) 같은 물리적 흔들림을 같은 기준으로 보게 한다
+        public float DriftScale { get; set; } = 1f;
+
         /// 도착이 확정된 영역 Id를 1회 통지
         public event Action<int> Arrived;
 
@@ -80,7 +83,7 @@ namespace Shinmyeong.Interaction
                 max = Mathf.Max(max, sx);
             }
 
-            if (max - min > _maxDriftInWindow)
+            if (max - min > _maxDriftInWindow * DriftScale)
                 return;
 
             Locked = true;

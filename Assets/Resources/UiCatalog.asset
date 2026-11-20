@@ -12,6 +12,79 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5120a63c3d805814fb2eafa703502697, type: 3}
   m_Name: UiCatalog
   m_EditorClassIdentifier: Assembly-CSharp::Shinmyeong.UI.UiCatalog
+  Sounds:
+  - Code: 01_BGM
+    Clip: {fileID: 8300000, guid: da6a559b09da11e408fb2edfd6d2f70d, type: 3}
+  - Code: 01_SE
+    Clip: {fileID: 8300000, guid: 68bcf84aa0bfc4643ba4305db344b60e, type: 3}
+  - Code: 01_VO
+    Clip: {fileID: 8300000, guid: 7aabe7734c277e14e9f52feb63f8d91f, type: 3}
+  - Code: 02_BGM
+    Clip: {fileID: 8300000, guid: f3bf74ce8e179184cbb1f9d883730dd2, type: 3}
+  - Code: 02_SE
+    Clip: {fileID: 8300000, guid: 1089e3119f9562e4dbba7893e31ca877, type: 3}
+  - Code: 02_VO
+    Clip: {fileID: 8300000, guid: 30277b5a6644e1448a7c40c1880a32f6, type: 3}
+  - Code: 03_BGM
+    Clip: {fileID: 8300000, guid: 6856bcb39db9c2941ad46f7582896ea2, type: 3}
+  - Code: 03_SE
+    Clip: {fileID: 8300000, guid: 33ca9a5e339146f47bb4e7634eb721a0, type: 3}
+  - Code: 03_VO
+    Clip: {fileID: 8300000, guid: 1235452ef5eab3a4790b6843d791d1f0, type: 3}
+  - Code: 04_BGM
+    Clip: {fileID: 8300000, guid: cb87819dfa9589f42bb30c0beb1dbe59, type: 3}
+  - Code: 04_SE
+    Clip: {fileID: 8300000, guid: af52afaf3a74fd940b8a4438a7e4f147, type: 3}
+  - Code: 04_VO
+    Clip: {fileID: 8300000, guid: 4c3cb24bd268a364d9d46041ebacc030, type: 3}
+  - Code: 05_BGM
+    Clip: {fileID: 8300000, guid: 351906791b0aeb94dbbeb18b8d917147, type: 3}
+  - Code: 05_SE
+    Clip: {fileID: 8300000, guid: f86c700b7741a074da290ba181320161, type: 3}
+  - Code: 05_VO
+    Clip: {fileID: 8300000, guid: fc1b7da6d066b79449b92fa5e791ebd7, type: 3}
+  - Code: 06_SE
+    Clip: {fileID: 8300000, guid: 448b7ab9ff782d749bd9d0bd07a5b81e, type: 3}
+  - Code: 06_VO
+    Clip: {fileID: 8300000, guid: e73a10b7f82d22d4aa5234d07b230b67, type: 3}
+  - Code: 07_SE
+    Clip: {fileID: 8300000, guid: 6b8cdcd156714794fa6c10fd3d7263c4, type: 3}
+  - Code: 07_VO
+    Clip: {fileID: 8300000, guid: a0ab78725f1b5dd47afae6f32f78fc11, type: 3}
+  - Code: 08_SE
+    Clip: {fileID: 8300000, guid: b1afccc33bda1f54185eb3c5f41414b0, type: 3}
+  - Code: 08_VO
+    Clip: {fileID: 8300000, guid: c5f59bd5ff2a000439cd4abf982621a9, type: 3}
+  - Code: 09_SE
+    Clip: {fileID: 8300000, guid: 7c4cb6201e5274b46bdcb914ebaab974, type: 3}
+  - Code: 09_VO
+    Clip: {fileID: 8300000, guid: 799a9f724167490409fd5f2f8ce1023e, type: 3}
+  - Code: 10_SE
+    Clip: {fileID: 8300000, guid: 0730f88798ced8b4e96c8d6499566d78, type: 3}
+  - Code: 10_VO
+    Clip: {fileID: 8300000, guid: d369984df58de8940952a9c6779cc822, type: 3}
+  - Code: 11_SE
+    Clip: {fileID: 8300000, guid: c3c563a639d6faf4f80bf59b83ef96f3, type: 3}
+  - Code: 11_VO
+    Clip: {fileID: 8300000, guid: 008d789bc5051ef46b2d0ef46f8266e0, type: 3}
+  - Code: 12_SE
+    Clip: {fileID: 8300000, guid: 54c46b02fd89d604bb8dedfa5074a336, type: 3}
+  - Code: 12_VO
+    Clip: {fileID: 8300000, guid: 527354717e6c8b24789976f83051d9c7, type: 3}
+  - Code: 13_SE
+    Clip: {fileID: 8300000, guid: b8e1452617ee81f42ba7d217a82e7c05, type: 3}
+  - Code: 13_VO
+    Clip: {fileID: 8300000, guid: ebc5179d8601ec746974ce50c0894131, type: 3}
+  - Code: 14_SE
+    Clip: {fileID: 8300000, guid: 2688f1ac7bb9c104bb166719e0afb305, type: 3}
+  - Code: 14_VO
+    Clip: {fileID: 8300000, guid: 4ca4d05fb6f2acd479994a84c8b0126f, type: 3}
+  - Code: 15_SE
+    Clip: {fileID: 8300000, guid: 689cdc885ecae1344a8b59aa7b79165f, type: 3}
+  - Code: 16_SE
+    Clip: {fileID: 8300000, guid: 9fdec68b3d17ed949a5c86b9f3639cf9, type: 3}
+  - Code: 17_SE
+    Clip: {fileID: 8300000, guid: 10d525580fbe9d94d847e850e43a244d, type: 3}
   Sprites:
   - Name: Avatar_01
     Sprite: {fileID: 2454578995973476345, guid: cfae7270948b0314fbcb792788284382, type: 3}
@@ -349,6 +422,8 @@ MonoBehaviour:
     Sprite: {fileID: 1296875114579654043, guid: da81119fb839ff64386c5d5390076b00, type: 3}
   - Name: SCR-015-Title
     Sprite: {fileID: 987691977620406773, guid: 69112fbe31772e84f8002ea112c2dc0b, type: 3}
+  - Name: SCR-015-Title 1
+    Sprite: {fileID: 21300000, guid: a8fab91a7c71de446ad3501a615bbd5d, type: 3}
   - Name: SCR-016-Title
     Sprite: {fileID: 21300000, guid: fd612e623dfcb1344b463f80bf31c35a, type: 3}
   - Name: SCR-017-Bg

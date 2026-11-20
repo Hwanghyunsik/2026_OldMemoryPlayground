@@ -91,6 +91,9 @@ namespace Shinmyeong.Net
         {
             if (_finalReported) return;
             _finalReported = true;
+            // 에디터는 wantsToQuit 이 false 여도 플레이 모드를 바로 끝내므로, 보고가 끝났을 때 이 오브젝트는 이미 파괴돼 있다.
+            // 파괴된 MonoBehaviour 에 CancelInvoke 를 부르면 MissingReferenceException — 그때는 할 일이 없다(이미 끝남)
+            if (this == null) return;
             CancelInvoke(nameof(ForceQuit));
             Quit();
         }
@@ -147,7 +150,7 @@ namespace Shinmyeong.Net
             try
             {
                 var svc = BodyTrackingService.Instance;
-                bool camera = svc != null && svc.ActiveProvider is MoveNetPoseProvider mn && mn.IsRunning;
+                bool camera = svc != null && svc.CameraRunning; // 디버그 마우스 모드여도 카메라 자체 상태를 보고
                 var body = new DeviceStatusRequest
                 {
                     camera_connected = camera,

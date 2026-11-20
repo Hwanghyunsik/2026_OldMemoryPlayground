@@ -24,6 +24,29 @@ namespace Shinmyeong.UI
             public VideoClip Clip;
         }
 
+        [System.Serializable]
+        public class SoundEntry
+        {
+            public string Code; // 08 사운드 시나리오 코드 — `01_BGM` · `01_SE` · `01_VO`
+            public AudioClip Clip;
+        }
+
+        /// `Assets/Audio/**/NN_(BGM|SE|VO)_*.wav` — 파일명 앞 두 토막이 코드다 (08 사운드 시나리오 01 파일목록)
+        public List<SoundEntry> Sounds = new List<SoundEntry>();
+        Dictionary<string, AudioClip> _soundMap;
+
+        public AudioClip FindSound(string code)
+        {
+            if (_soundMap == null)
+            {
+                _soundMap = new Dictionary<string, AudioClip>();
+                foreach (var e in Sounds)
+                    if (e != null && !string.IsNullOrEmpty(e.Code) && e.Clip != null)
+                        _soundMap[e.Code] = e.Clip;
+            }
+            return _soundMap.TryGetValue(code, out var c) ? c : null;
+        }
+
         public List<SpriteEntry> Sprites = new List<SpriteEntry>();
         public List<Font> Fonts = new List<Font>();
         public List<VideoEntry> Videos = new List<VideoEntry>();

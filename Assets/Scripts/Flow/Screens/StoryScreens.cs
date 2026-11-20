@@ -72,6 +72,7 @@ namespace Shinmyeong.Flow.Screens
                 if (go != null)
                     Destroy(go);
             _items.Clear();
+            Sound.SoundPlayer.Play(Sound.Snd.Result); // 결과 등장 06_SE — 간이 결과에는 음성이 없다
             StartCoroutine(Run());
         }
 
@@ -313,6 +314,9 @@ namespace Shinmyeong.Flow.Screens
                 _gaugeRoot.SetActive(false);
             else
             {
+                // 잔치상 등장: 06_SE → 0.3초 → 단계 음성 1개 (12·13·14_VO)
+                Sound.SoundPlayer.Play(Sound.Snd.Result);
+                Sound.SoundPlayer.PlayAfter(Sound.Snd.Vo(11 + stage), 0.3f);
                 _gaugeRoot.SetActive(true);
                 _timer = StartCoroutine(AutoReturn());
             }

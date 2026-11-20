@@ -53,7 +53,8 @@ namespace Shinmyeong.UI
         }
 
         /// 영상 재생 시작 — 처음부터. 영상이 카탈로그에 없으면 false
-        public bool Play(string clipName, bool loop)
+        /// mute = 영상에 든 소리를 내지 않는다 (튜토리얼 영상 — 08 사운드 시나리오)
+        public bool Play(string clipName, bool loop, bool mute = false)
         {
             var clip = UiCatalog.Instance != null ? UiCatalog.Instance.FindVideo(clipName) : null;
             if (clip == null)
@@ -67,6 +68,8 @@ namespace Shinmyeong.UI
             _player.Stop();
             _player.clip = clip;
             _player.isLooping = loop;
+            for (ushort track = 0; track < clip.audioTrackCount; track++)
+                _player.SetDirectAudioMute(track, mute);
             ClearTexture(); // 이전 영상의 마지막 장면이 비치지 않게 창 색으로 지운다
             _image.enabled = true;
             _player.Play(); // 준비가 안 됐으면 준비 후 첫 프레임이 나오면 시작 (waitForFirstFrame)

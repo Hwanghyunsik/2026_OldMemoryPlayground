@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Shinmyeong.Flow;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
+using Shinmyeong.Sound;
 using Shinmyeong.Tracking;
 using Shinmyeong.UI;
 
@@ -170,6 +171,8 @@ namespace Shinmyeong.Games.Shopping
                 _judge.Reset();
                 return;
             }
+            // 몸 중심 리치 존으로 좌표가 확대되면 제자리 흔들림도 같이 커진다 — 정지 기준은 물리 거리 그대로 유지
+            _judge.DriftScale = svc.BodyMapScaleX;
             _judge.Tick(svc.BodyCenterX01, Time.time);
 
             // 사용자 현재 위치(몸 중심) 표시 — 발판 줄 위 (튜토리얼 영상)
@@ -351,6 +354,13 @@ namespace Shinmyeong.Games.Shopping
                 UpdateTargetChips(targets, boughtList, ti);
                 SetLights(targetZone, storeLit: true, padCReturn: false);
                 _guideText.text = "빛나는 발판으로 이동하세요"; // 8-6-1 확정 문구
+                if (round == 1 && ti == 0)
+                    SoundPlayer.Bgm(Snd.BgmMarket); // 1라운드 첫 발판 빛남에 튜토리얼 곡 → 장보기 곡 1.5초 교차
+                // 발판 빛남 10_SE (라운드 시작 신호 겸용) — 라운드 첫 목표는 바로, 이어지는 목표는 앞 목표의 장바구니 소리가 끝난 뒤
+                if (ti == 0)
+                    SoundPlayer.Play(Snd.PadGlow);
+                else
+                    SoundPlayer.PlayAfter(Snd.PadGlow);
 
                 // ① 점포 도착 대기 — 다른 점포에 멈추면 그대로 구매 (실패 없음 · 확정 5-11)
                 float waitStart = Time.time;
@@ -377,6 +387,7 @@ namespace Shinmyeong.Games.Shopping
                         // 힌트: 목표 재알림이 아니라 「움직여야 한다」 전달 (확정 5-8-1)
                         nextHint = Time.time + _hintIntervalSeconds;
                         itemHints++;
+                        SoundPlayer.Play(Snd.Hint);
                         yield return FlashGuide("몸을 움직여 빛나는 발판 위에 서 보세요");
                     }
                     yield return null;
@@ -387,6 +398,7 @@ namespace Shinmyeong.Games.Shopping
                 bool correct = boughtZone == targetZone;
                 boughtStore.Purchased = true;
                 boughtStore.DoneBadge.SetActive(true); // 구매 완료 표시 (확정)
+                SoundPlayer.Play(correct ? Snd.Buy : Snd.BuyOther); // 목표 점포 11_SE · 다른 점포 12_SE (그대로 구매)
                 SetLights(-1, false, false); // 목표 강조를 먼저 끄고 담김 반짝임을 보인다 (튜토리얼 영상 순서)
                 EffectKit.Play(EffectKit.ShoppingGet, boughtStore.Card, front: true);
                 boughtList.Add((boughtStore.Displayed, correct));
@@ -410,6 +422,7 @@ namespace Shinmyeong.Games.Shopping
                 // ② 중앙 복귀 대기
                 SetLights(targetZone, storeLit: false, padCReturn: true);
                 _guideText.text = "가운데 장바구니로 돌아와 주세요";
+                SoundPlayer.PlayAfter(Snd.PadGlow); // 가운데 복귀 발판 점등도 같은 소리 — 구매음이 끝난 뒤 이어서
                 nextHint = Time.time + _hintIntervalSeconds;
                 lastActivityX = BodyXOrNaN();
                 bool returned = false;
@@ -425,12 +438,14 @@ namespace Shinmyeong.Games.Shopping
                         nextHint = Time.time + _hintIntervalSeconds;
                         _play.HintCount++; // 복귀 유도 힌트도 도움 횟수에 포함
                         returnHints++;
+                        SoundPlayer.Play(Snd.Hint);
                         yield return FlashGuide("가운데 발판으로 돌아와 주세요");
                     }
                     yield return null;
                 }
 
                 // 담기 연출 — 장바구니가 살짝 커졌다 돌아온다
+                SoundPlayer.Play(Snd.Basket); // 장바구니 복귀 13_SE
                 yield return BasketPop();
                 SetLights(-1, false, false);
             }

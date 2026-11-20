@@ -96,7 +96,7 @@ namespace Shinmyeong.Tracking
         {
             string provider = _service.ActiveProvider == null ? "없음"
                 : _service.ActiveProvider is MoveNetPoseProvider m ? $"MoveNet ({m.LastInferenceMs:F1}ms)"
-                : "Mock(마우스)";
+                : _service.MouseMode ? "Mock(마우스 · 디버그 F2)" : "Mock(마우스 · 카메라 없음)";
             string left = HandLabel(HandSide.Left);
             string right = HandLabel(HandSide.Right);
             string body = !_service.BodyValid ? "무효"
@@ -105,7 +105,8 @@ namespace Shinmyeong.Tracking
                 + $"사람: {(_service.PersonPresent ? "감지됨" : "없음")}\n"
                 + $"왼손: {left} · 오른손: {right}\n"
                 + $"몸 중심 x: {body}\n"
-                + "F1 오버레이 · P 사람 토글(Mock)";
+                + "F1 오버레이 · P 사람 토글(Mock)"
+                + (BodyTrackingService.DebugMode ? " · F2 마우스↔카메라" + (_service.CameraRunning ? " (카메라 켜짐)" : " (카메라 없음)") : "");
             GUI.Label(new Rect(10, _previewHeight + 20, 400, 120), text);
         }
 

@@ -3,6 +3,7 @@ using UnityEngine;
 using Shinmyeong.Flow.Screens;
 using Shinmyeong.Net;
 using Shinmyeong.Save;
+using Shinmyeong.Sound;
 
 namespace Shinmyeong.Flow
 {
@@ -79,7 +80,7 @@ namespace Shinmyeong.Flow
             Add<LobbyScreen>(ScreenId.SCR_005);
             Add<StoryVideoScreen>(ScreenId.SCR_006).Setup("SCR-006-Title", new Rect(805, 88, 310, 65), "1.오프닝", ScreenId.SCR_007);
             // 튜토리얼 단계 문구·삽화는 시안(SCR-007/012/017) 기준 — 「양발 고정 · 체중 싣기」류 표현 금지(설계서)
-            Add<GameTutorialScreen>(ScreenId.SCR_007).Setup("SCR-007-Title", 192, "SCR-007-Bg", new[]
+            Add<GameTutorialScreen>(ScreenId.SCR_007).Setup("SCR-007-Title", 192, "SCR-007-Bg", 1, new[]
             {
                 new TutorialStep("손을 올립니다", "거두고 싶은 것 위에", "SCR-007-Sequence-01"),
                 new TutorialStep("아래로 당깁니다", "천천히 내리면 됩니다", "SCR-007-Sequence-02"),
@@ -88,7 +89,7 @@ namespace Shinmyeong.Flow
             Add<HarvestPlayScreen>(ScreenId.SCR_008);
             Add<ResultScreen>(ScreenId.SCR_009);
             Add<StoryVideoScreen>(ScreenId.SCR_011).Setup("SCR-011_Title", new Rect(828, 88, 265, 65), "2.연결연출1", ScreenId.SCR_012);
-            Add<GameTutorialScreen>(ScreenId.SCR_012).Setup("SCR-012-Title", 143, "SCR-013-Bg", new[]
+            Add<GameTutorialScreen>(ScreenId.SCR_012).Setup("SCR-012-Title", 143, "SCR-013-Bg", 4, new[]
             {
                 new TutorialStep("빛나는 발판을 봅니다", "위쪽 재료와 같은 자리입니다", "Icon-Step"),
                 new TutorialStep("그쪽으로 옮겨 갑니다", "지나가는 자리는 괜찮습니다", "Icon-GranMa"),
@@ -99,7 +100,7 @@ namespace Shinmyeong.Flow
             Add<ShoppingResultScreen>(ScreenId.SCR_014);
             Add<StoryVideoScreen>(ScreenId.SCR_016).Setup("SCR-016-Title", new Rect(740, 90, 441, 85), "3.연결연출2", ScreenId.SCR_017);
             // 「외우지 않아도 괜찮아요」를 1단계에 — 기억 부담 불안을 먼저 낮춘다 (설계서)
-            Add<GameTutorialScreen>(ScreenId.SCR_017).Setup("SCR-017-title", 192, "SCR-017-Bg", new[]
+            Add<GameTutorialScreen>(ScreenId.SCR_017).Setup("SCR-017-title", 192, "SCR-017-Bg", 8, new[]
             {
                 new TutorialStep("레시피를 잠깐 봅니다", "외우지 않아도 괜찮아요"),
                 new TutorialStep("재료 위에 손을 올립니다", "여섯 가지 중에서 고릅니다"),
@@ -161,6 +162,7 @@ namespace Shinmyeong.Flow
             if (_current != null)
                 _current.Hide();
             _current = next;
+            ApplySound(id);
             _current.Show();
             Debug.Log($"[Flow] → {id}");
         }
@@ -178,8 +180,56 @@ namespace Shinmyeong.Flow
             if (_current != null)
                 _current.Hide();
             _current = _screens[id];
+            ApplySound(id);
             _current.Show();
             Debug.Log($"[Flow] ← {id}");
+        }
+
+        /// 화면이 바뀔 때의 소리 (08 사운드 시나리오 03 공통규칙): 앞 화면의 효과음·음성은 멈추고, BGM은 옮긴 화면의 구간을 따른다
+        /// — 같은 곡이면 끊지 않고, 다른 곡이면 1.5초 교차. 화면 자체의 소리(결과 등장음 등)는 각 화면 OnEnter 가 낸다.
+        static void ApplySound(ScreenId id)
+        {
+            SoundPlayer.StopScreenSounds();
+            switch (id)
+            {
+                case ScreenId.SCR_001:
+                case ScreenId.SCR_002:
+                case ScreenId.SCR_003:
+                case ScreenId.SCR_004:
+                case ScreenId.SCR_005:
+                case ScreenId.SCR_022:
+                case ScreenId.SCR_023:
+                    SoundPlayer.Bgm(Snd.BgmMain);
+                    break;
+                case ScreenId.SCR_007:
+                case ScreenId.SCR_012:
+                case ScreenId.SCR_017:
+                    SoundPlayer.Bgm(Snd.BgmTutorial);
+                    break;
+                // 게임 곡은 플레이 화면(008·013·018)의 1라운드 시작 신호에 게임이 직접 튼다 — 진입 때는 앞 곡(튜토리얼)을 그대로 둔다.
+                // 결과 화면은 그 곡을 유지한다 (기록 보기에서 돌아올 때도 이 곡으로 복귀)
+                case ScreenId.SCR_009:
+                case ScreenId.SCR_010:
+                    SoundPlayer.Bgm(Snd.BgmHarvest);
+                    break;
+                case ScreenId.SCR_014:
+                case ScreenId.SCR_015:
+                    SoundPlayer.Bgm(Snd.BgmMarket);
+                    break;
+                case ScreenId.SCR_019:
+                case ScreenId.SCR_020:
+                    SoundPlayer.Bgm(Snd.BgmCook);
+                    break;
+                // 영상 4종은 게임 BGM 없이 영상 소리만 · 설치 화면(운영자 로그인·기기 선택)은 소리 없음
+                case ScreenId.SCR_006:
+                case ScreenId.SCR_011:
+                case ScreenId.SCR_016:
+                case ScreenId.SCR_021:
+                case ScreenId.LOGIN:
+                case ScreenId.DEVICE_SELECT:
+                    SoundPlayer.StopBgm();
+                    break;
+            }
         }
 
         void ResetSession()

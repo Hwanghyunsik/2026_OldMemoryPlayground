@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Shinmyeong.Flow;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
+using Shinmyeong.Sound;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Cooking
@@ -153,7 +154,7 @@ namespace Shinmyeong.Games.Cooking
             UiKit.Img(review, "Background", "Bt-Round-Green-02", 0, 0, 157, 157, Color.white, sliced: true);
             UiKit.ImgFit(review, "Icon", "Icon-Record", 60, 25, 36, 38, Color.white);
             UiKit.Txt(review, "Label", 5, 70, 150, 72, "차림표\n다시 보기", 23, 7, Color.white);
-            UiKit.Dwell(review, 160, 157, 3f, () => _reviewRequested = true, withText: false)
+            UiKit.Dwell(review, 160, 157, 3f, () => _reviewRequested = true, withText: false, sound: false) // 01_SE 없이 차림표 14_SE만
                 .gameObject.AddComponent<SafeAreaExempt>().Reason = "디자인 시안 배치(좌측) — 2-4 안전 영역 밖 · 기획 확인 대기(Q5)";
             _reviewButton = review.gameObject;
 
@@ -221,6 +222,9 @@ namespace Shinmyeong.Games.Cooking
             int reviewCount = 0;
             int hintCount = 0;
 
+            if (round == 1)
+                SoundPlayer.Bgm(Snd.BgmCook); // 1라운드 차림표에 튜토리얼 곡 → 요리 곡 1.5초 교차 · 결과 화면까지 이어진다
+
             // ① 최초 레시피 기억 — 「다 외웠어요」로만 닫힘
             yield return ShowPopup(recipe, firstTime: true);
             float t0 = Time.time;
@@ -243,6 +247,7 @@ namespace Shinmyeong.Games.Cooking
                 {
                     // 미담은 정답 중 첫 번째를 지속 강조 (TTS 없음 · 확정 6-5)
                     ActivateHint(recipe);
+                    SoundPlayer.Play(Snd.Hint);
                     hintCount++;
                     _nextHintAt = Time.time + _hintIntervalSeconds;
                 }
@@ -250,6 +255,11 @@ namespace Shinmyeong.Games.Cooking
             }
 
             float roundTime = Time.time - t0;
+            bool allAnswers = true;
+            foreach (var pick in _picks)
+                allAnswers &= System.Array.IndexOf(recipe.Answers, pick) >= 0;
+            // 맞는지는 슬롯을 다 채운 뒤에만 소리로 알린다 — 마지막 재료의 15_SE 가 끝난 뒤 16_SE(전부 맞음) / 17_SE(다른 재료 포함)
+            SoundPlayer.PlayAfter(allAnswers ? Snd.CookDone : Snd.CookOther);
 
             // ③ 일괄 판정 — 색상 계열로만 구분 (부정 기호 금지 · 확정 6-8)
             var parts = new List<string>();
@@ -303,6 +313,7 @@ namespace Shinmyeong.Games.Cooking
             _reviewButton.SetActive(false);
             _popup.SetActive(true);
             _hud.SetGoal("필요한 재료를 기억해 주세요");
+            SoundPlayer.Play(Snd.Recipe); // 차림표 팝업 열림 14_SE (최초 · 다시 보기 공통)
 
             _popupFoodName.text = recipe.Food;
             var foodArt = ArtCatalog.Get(ArtCatalog.Food, recipe.Food);
@@ -389,7 +400,7 @@ namespace Shinmyeong.Games.Cooking
                     UiKit.Txt(card, "Placeholder", 20, 40, 203, 130, chosen[i], 34, 6, Skin.Muted);
                 UiKit.Txt(card, "Label", 7, 183, 228, 48, chosen[i], 30, 6, Skin.BrownDark);
 
-                var target = UiKit.Dwell(card, 243, 243, _pickDwellSeconds, null); // 요리 재료 1~2초 기준안 (C3)
+                var target = UiKit.Dwell(card, 243, 243, _pickDwellSeconds, null, sound: false); // 요리 재료 1~2초 기준안 (C3) · 소리는 담길 때 15_SE
                 var cand = new Candidate
                 {
                     Item = chosen[i],
@@ -441,6 +452,7 @@ namespace Shinmyeong.Games.Cooking
             else
                 _slotTexts[slot].text = cand.Item;
             _picks.Add(cand.Item);
+            SoundPlayer.Play(Snd.Tok); // 톡 15_SE — 맞는지와 상관없이 같은 소리 (확정 6-8-1)
             EffectKit.Play(EffectKit.CookingGet, _slotFaces[slot].rectTransform, front: true); // 담김 반짝임 — 칸 앞 (정답 여부 무관 · 확정 6-8-1)
             if (_firstPickSec < 0f)
                 _firstPickSec = Time.time - _roundT0; // 반응 시간 — 정답 여부 무관, 첫 선택 확정 시점(18-4)

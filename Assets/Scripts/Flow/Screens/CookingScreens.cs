@@ -104,6 +104,8 @@ namespace Shinmyeong.Flow.Screens
             _items.Clear();
 
             ResultKit.ApplyHeader(_header, Flow);
+            if (!Flow.LastMoveWasBack) // 기록 보기에서 돌아온 경우는 「등장」이 아니다
+                Sound.SoundPlayer.Play(Sound.Snd.Result); // 결과 등장 06_SE
             var done = new List<string>();
             var other = new List<string>();
             if (LastPlay != null)

@@ -4,6 +4,7 @@ using System.Globalization;
 using UnityEngine;
 using UnityEngine.UI;
 using Shinmyeong.Interaction;
+using Shinmyeong.Sound;
 using Shinmyeong.Tracking;
 using Shinmyeong.UI;
 
@@ -419,10 +420,19 @@ namespace Shinmyeong.Flow.Screens
         protected override void OnEnter()
         {
             UiKit.SetBar(_progressFill, 0f);
+            _placeholder.gameObject.SetActive(false);
+            StartCoroutine(Begin());
+        }
+
+        /// 영상 시작 전 게임 BGM을 1.5초 페이드 아웃(FlowManager)하고, 다 꺼진 뒤 영상을 튼다 — 영상 소리만 들리게 (08 사운드 시나리오)
+        IEnumerator Begin()
+        {
+            while (SoundPlayer.BgmAudible)
+                yield return null;
             bool playing = _video.Play(_clip, loop: false);
             _placeholder.gameObject.SetActive(!playing);
             if (!playing)
-                StartCoroutine(FallbackNext());
+                yield return FallbackNext();
         }
 
         protected override void OnExit()

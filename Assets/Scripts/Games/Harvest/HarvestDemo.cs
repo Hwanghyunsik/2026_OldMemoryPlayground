@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Shinmyeong.Flow;
 using Shinmyeong.Interaction;
 using Shinmyeong.Save;
+using Shinmyeong.Sound;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Games.Harvest
@@ -154,6 +155,8 @@ namespace Shinmyeong.Games.Harvest
         IEnumerator RunRound(int round)
         {
             float roundStartTime = Time.time; // 기록 round_sec 용
+            if (round == 1)
+                SoundPlayer.Bgm(Snd.BgmHarvest); // 1라운드 시작에 튜토리얼 곡 → 수확 곡 1.5초 교차 · 결과 화면까지 이어진다
             int count = round <= 3 ? 3 : round <= 7 ? 4 : 5;
             bool hasBug = round >= 4;
 
@@ -195,7 +198,7 @@ namespace Shinmyeong.Games.Harvest
 
             // 목표 강조 약 1초 — 끝나는 시점이 반응 시간 t=0
             var target = _crops.Find(c => c.Kind == Kind.Target);
-            yield return Highlight(target);
+            yield return Highlight(target, Snd.Target);
             float t0 = Time.time;
             float nextHintAt = t0 + _hintIntervalSeconds;
             int hintCount = 0;
@@ -209,7 +212,7 @@ namespace Shinmyeong.Games.Harvest
                 {
                     hintCount++;
                     nextHintAt = Time.time + _hintIntervalSeconds;
-                    yield return Highlight(target); // 자동 힌트 = 목표 재강조 · TTS 없음
+                    yield return Highlight(target, Snd.Hint); // 자동 힌트 = 목표 재강조 + 힌트음 · 음성 없음
                 }
                 yield return null;
             }
@@ -220,6 +223,7 @@ namespace Shinmyeong.Games.Harvest
             EffectKit.Stop(ref _targetEffect);
 
             var pulled = _crops.Find(c => c.Go == _pulledTarget.gameObject);
+            SoundPlayer.Play(pulled.Kind == Kind.Target ? Snd.Harvest : Snd.Whoosh); // 맞는 작물 = 수확 08_SE · 다른 작물·벌레 = 휙 09_SE
             string result = pulled.Kind == Kind.Target ? "정답" : pulled.Kind == Kind.Bug ? "벌레" : "다른 선택";
             _records.Add($"R{round}: {pulled.Name}({result}) · 반응 {reaction:F1}s · 힌트 {hintCount}회");
             Debug.Log($"[Harvest] {_records[_records.Count - 1]}");
@@ -313,8 +317,9 @@ namespace Shinmyeong.Games.Harvest
             };
         }
 
-        IEnumerator Highlight(Crop target)
+        IEnumerator Highlight(Crop target, string sound)
         {
+            SoundPlayer.Play(sound); // 라운드 시작 강조 07_SE · 10초 힌트 재강조 05_SE
             // 목표 강조 이펙트(빛 테 + 퍼지는 빛 · 튜토리얼 영상과 같은 연출) — 한 주기 재생, 당기면 바로 지운다
             EffectKit.Stop(ref _targetEffect);
             _targetEffect = EffectKit.Play(EffectKit.HarvestTarget, target.Rect);

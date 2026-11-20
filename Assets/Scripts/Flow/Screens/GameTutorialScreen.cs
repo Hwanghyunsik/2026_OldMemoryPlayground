@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Shinmyeong.Interaction;
+using Shinmyeong.Sound;
 using Shinmyeong.UI;
 
 namespace Shinmyeong.Flow.Screens
@@ -48,9 +49,13 @@ namespace Shinmyeong.Flow.Screens
         VideoView _video;
         float _timer;
         int _currentStep;
+        int _firstVoice;
+        bool[] _voiced = System.Array.Empty<bool>(); // 단계 음성은 화면에 들어온 뒤 단계마다 1번만 (영상이 반복돼도 다시 내지 않는다)
 
-        public GameTutorialScreen Setup(string titleSprite, float titleWidth, string bgSprite, TutorialStep[] steps, string clip, ScreenId playScreen)
+        /// firstVoice = 1단계 안내 음성 번호 (08 사운드 시나리오 — 수확 01_VO~ · 장보기 04_VO~ · 요리 08_VO~ · 단계 순서대로 이어진다)
+        public GameTutorialScreen Setup(string titleSprite, float titleWidth, string bgSprite, int firstVoice, TutorialStep[] steps, string clip, ScreenId playScreen)
         {
+            _firstVoice = firstVoice;
             _titleSprite = titleSprite;
             _titleWidth = titleWidth;
             _bgSprite = bgSprite;
@@ -135,8 +140,10 @@ namespace Shinmyeong.Flow.Screens
             _storyButtons.SetActive(story);
             _timer = 0f;
             _currentStep = 0;
+            _voiced = new bool[_steps.Length];
             ApplyHighlight();
-            bool playing = !string.IsNullOrEmpty(_clip) && _video.Play(_clip, loop: true);
+            // 튜토리얼 영상은 소리 없이 — 단계 음성과 튜토리얼 BGM만 들린다 (08 사운드 시나리오)
+            bool playing = !string.IsNullOrEmpty(_clip) && _video.Play(_clip, loop: true, mute: true);
             _placeholder.gameObject.SetActive(!playing);
         }
 
@@ -174,6 +181,12 @@ namespace Shinmyeong.Flow.Screens
 
         void ApplyHighlight()
         {
+            // 단계 안내가 나올 때 음성 1번 (01~11_VO)
+            if (_firstVoice > 0 && _currentStep < _voiced.Length && !_voiced[_currentStep])
+            {
+                _voiced[_currentStep] = true;
+                SoundPlayer.Play(Snd.Vo(_firstVoice + _currentStep));
+            }
             for (int i = 0; i < _faces.Length; i++)
             {
                 bool current = i == _currentStep;

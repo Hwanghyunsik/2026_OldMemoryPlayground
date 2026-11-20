@@ -138,7 +138,7 @@ namespace Shinmyeong.Flow.Screens
             // 단계 판정 — 체크리스트는 상태를 쉬운 말로 (기술 용어 금지 · 설계서)
             bool present = svc != null && svc.PersonPresent;
             bool fullBody = present && (mock ? svc.BodyValid : FullBodyVisible(svc));
-            bool centered = fullBody && svc.BodyValid && Mathf.Abs(svc.BodyCenterX01 - 0.5f) <= CenterTolerance;
+            bool centered = fullBody && svc.BodyValid && Mathf.Abs(svc.BodyCenterRawX01 - 0.5f) <= CenterTolerance;
 
             if (centered)
             {
@@ -161,12 +161,13 @@ namespace Shinmyeong.Flow.Screens
 
             _message.text = !present ? "화면 앞 발자국 위치에 서 주세요."
                 : !fullBody ? "조금만 뒤로 물러나 주세요."
-                : !centered ? (svc.BodyCenterX01 > 0.5f ? "조금 왼쪽으로 와 주세요." : "조금 오른쪽으로 와 주세요.")
+                : !centered ? (svc.BodyCenterRawX01 > 0.5f ? "조금 왼쪽으로 와 주세요." : "조금 오른쪽으로 와 주세요.")
                 : "좋아요, 그대로 잠깐 계세요.";
 
             if (done)
             {
                 CommitCalibration();
+                Sound.SoundPlayer.Play(Sound.Snd.Detect); // 보정 완료 02_SE — 화면이 넘어가도 이어서 들린다
                 Flow.Go(ScreenId.SCR_003);
             }
         }
@@ -187,7 +188,7 @@ namespace Shinmyeong.Flow.Screens
 
         void AccumulateSample(BodyTrackingService svc, bool mock)
         {
-            _sumCenterX += svc.BodyCenterX01;
+            _sumCenterX += svc.BodyCenterRawX01;
             if (mock)
             {
                 _sampleCount++;
